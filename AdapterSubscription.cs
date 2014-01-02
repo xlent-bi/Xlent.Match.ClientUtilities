@@ -46,18 +46,18 @@ namespace Xlent.Match.ClientUtilities
             return new SqlFilter(string.Format("ClientName = '{0}' AND EntityName = '{1}'", clientName, entityName));
         }
 
-        public delegate Messages.SuccessResponse RequestDelegate<in T>(T request) where T : Messages.Request;
+        public delegate Messages.SuccessResponse RequestDelegate(Request request);
 
-        public void HandleOne<T>(RequestDelegate<T> requestDelegate) where T : Messages.Request
+        public void HandleOne(RequestDelegate requestDelegate)
         {
             BrokeredMessage message;
-            var request = GetOneMessage<T>(out message);
+            var request = GetOneMessage<Request>(out message);
             if (request == null) return;
 
             try
             {
                 var successResponse = requestDelegate(request);
-                PublishResponse(successResponse);
+                SendResponse(successResponse);
             }
             catch (Exceptions.MovedException exception)
             {
@@ -67,7 +67,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.Message
                 };
 
-                PublishResponse(failureResponse);
+                SendResponse(failureResponse);
             }
             catch (Exceptions.BaseClass exception)
             {
@@ -76,7 +76,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.Message
                 };
 
-                PublishResponse(failureResponse);
+                SendResponse(failureResponse);
             }
             catch (Exception)
             {
@@ -87,9 +87,9 @@ namespace Xlent.Match.ClientUtilities
             message.Complete();
         }
 
-        private static void PublishResponse<T>(T response) where T : Response
+        private static void SendResponse<T>(T response) where T : Response
         {
-            _responseTopic.Publish<T>(response, new Dictionary<string, object>() { { "ResponseType", response.ResponseType } });
+            _responseTopic.Send<T>(response, new Dictionary<string, object>() { { "ResponseType", response.ResponseType } });
         }
     }
 }

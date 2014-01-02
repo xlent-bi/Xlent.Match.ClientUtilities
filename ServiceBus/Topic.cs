@@ -37,7 +37,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public TopicClient Client { get; private set; }
 
-        public void Publish<T>(T message, IDictionary<string,object> properties)
+        public void Send<T>(T message, IDictionary<string,object> properties)
         {
 
             var dataContractSerializer =

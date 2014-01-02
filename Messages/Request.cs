@@ -33,40 +33,36 @@ namespace Xlent.Match.ClientUtilities.Messages
         public string ProcessId { get; set; }
 
         /// <summary>
-        /// The client that the request is directed to. You should only subscribe to your own messages.
-        /// Mandatory.
-        /// </summary>
-        [DataMember]
-        public string ClientName { get; set; }
-
-        /// <summary>
-        /// The entity within your client that the request is referring to.
-        /// Mandatory.
-        /// </summary>
-        [DataMember]
-        public string EntityName { get; set; }
-
-        /// <summary>
-        /// The identity of the object that the request is referring to.
-        /// Mandatory for requests of type <see cref="Request.Update"/> and <see cref="Request.Get"/>.
-        /// </summary>
-        [DataMember]
-        public string KeyValue { get; set; }
-
-        /// <summary>
-        /// The internal Match identity of the object that the request is referring to.
-        /// Mandatory for requests of type <see cref="Request.Create"/>.
-        /// </summary>
-        [DataMember]
-        public string MatchId { get; set; }
-
-        /// <summary>
         /// The data for the request.
         /// Mandatory for requests of type <see cref="Request.Create"/> and <see cref="Request.Update"/>.
         /// </summary>
         [DataMember]
         public MatchObject MatchObject { get; set; }
 
+        /// <summary>
+        /// The client that the request is directed to. You should only subscribe to your own messages.
+        /// Mandatory.
+        /// </summary>
+        public string ClientName { get { return MatchObject.MainKey.ClientName; } }
+
+        /// <summary>
+        /// The entity within your client that the request is referring to.
+        /// Mandatory.
+        /// </summary>
+        public string EntityName { get { return MatchObject.MainKey.EntityName; } }
+
+        /// <summary>
+        /// The identity of the object that the request is referring to.
+        /// Mandatory for requests of type <see cref="Request.Update"/> and <see cref="Request.Get"/>.
+        /// </summary>
+        public string KeyValue { get { return MatchObject.MainKey.Value; } }
+
+        /// <summary>
+        /// The internal Match identity of the object that the request is referring to.
+        /// Mandatory for requests of type <see cref="Request.Create"/>.
+        /// </summary>
+        public string MatchId { get { return MatchObject.MainKey.MatchId; } }
+        
         public Request(RequestTypeEnum requestType)
         {
             RequestType = TranslateRequestType(requestType);

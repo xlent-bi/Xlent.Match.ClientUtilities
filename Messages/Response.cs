@@ -38,18 +38,23 @@ namespace Xlent.Match.ClientUtilities.Messages
         public string ProcessId { get; set; }
 
         /// <summary>
+        /// The data for the response.
+        /// Mandatory for requests of type <see cref="Request.Get"/>.
+        /// </summary>
+        [DataMember]
+        public MatchObject MatchObject { get; set; }
+
+        /// <summary>
         /// The <see cref="Request.ClientName"/>.
         /// Mandatory.
         /// </summary>
-        [DataMember]
-        public string ClientName { get; set; }
+        public string ClientName { get { return MatchObject.MainKey.ClientName; } }
 
         /// <summary>
         /// The <see cref="Request.EntityName"/>.
         /// Mandatory.
         /// </summary>
-        [DataMember]
-        public string EntityName { get; set; }
+        public string EntityName { get { return MatchObject.MainKey.EntityName; } }
 
         /// <summary>
         /// For requests of type <see cref="Request.Update"/> and <see cref="Request.Get"/>
@@ -58,40 +63,29 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// object that was created (or found to be already existing).
         /// Mandatory.
         /// </summary>
-        [DataMember]
-        public string KeyValue { get; set; }
+        public string KeyValue { get { return MatchObject.MainKey.Value; } }
 
         /// <summary>
         /// For requests of type <see cref="Request.Create"/>
         /// this property must have the same value as  <see cref="Request.MatchId"/>.
         /// </summary>
-        [DataMember]
-        public string MatchId { get; set; }
-
-        /// <summary>
-        /// The data for the response.
-        /// Mandatory for requests of type <see cref="Request.Get"/>.
-        /// </summary>
-        [DataMember]
-        public MatchObject MatchObject { get; set; }
+        public string MatchId { get { return MatchObject.MainKey.MatchId; } }
 
         /// <summary>
         /// Constructor for this class.
         /// </summary>
         /// <param name="request">The request that this response is associated to.</param>
         /// <param name="responseType">The type of response.</param>
-        /// <remarks>
-        /// The only property that is not set by this constructor is the <see cref="MatchObject"/> property.</remarks>
         protected Response(Request request, ResponseTypeEnum responseType)
         {
-            ResponseType = TranslateResponseType(responseType);
 
-            ProcessId = request.ProcessId;
-            ClientName = request.ClientName;
-            EntityName = request.EntityName;
+            ResponseType = TranslateResponseType(responseType);
             RequestType = request.RequestType;
-            KeyValue = request.KeyValue;
-            MatchId = request.MatchId;
+            ProcessId = request.ProcessId;
+            MatchObject = new MatchObject()
+            {
+                MainKey = request.MatchObject.MainKey
+            };
         }
 
         /// <summary>

@@ -121,6 +121,7 @@
     <Compile Include="MatchObjectModel\MainKey.cs" />
     <Compile Include="MatchObjectModel\MatchObject.cs" />
     <Compile Include="MatchObjectModel\Property.cs" />
+    <Compile Include="MessageHandler\EventTopic.cs" />
     <Compile Include="Messages\Event.cs" />
     <Compile Include="Messages\SuccessResponse.cs" />
     <Compile Include="Messages\Response.cs" />
