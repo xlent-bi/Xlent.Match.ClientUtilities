@@ -7,18 +7,18 @@ namespace Xlent.Match.ClientUtilities.Messages
     /// <summary>
     /// Use this message whenever one of your synchronized objects has changed, to make Match initiate its processing.
     /// </summary>
-    [DataContract]
+    [DataContract(Name = "Event", Namespace = "http://xlentmatch.com/")]
     public class Event
     {
-        public static string Updated = "Updated";
-        public static string Moved = "Moved";
-        public static string Deleted = "Deleted";
+        public const string Updated = "Updated";
+        public const string Moved = "Moved";
+        public const string Deleted = "Deleted";
 
         /// <summary>
         /// The type of event. Mandatory, one of <see cref="Updated"/>, <see cref="Moved"/>, <see cref="Deleted"/>.
         /// </summary>
         [DataMember]
-        public string Type { get; set; }
+        public string EventType { get; set; }
 
         /// <summary>
         /// Information about the object that has changed.
@@ -66,11 +66,25 @@ namespace Xlent.Match.ClientUtilities.Messages
         [DataMember]
         public string ExternalReference { get; set; }
 
-        public Event(string type)
+        /// <summary>
+        /// Constructor for a new event.
+        /// </summary>
+        /// <param name="eventType">The type of event, one of <see cref="Event.Updated"/>, <see cref="Event.Moved"/>
+        /// and <see cref="Event.Deleted"/>.</param>
+        public Event(string eventType)
         {
 #if DEBUG
+            switch (eventType)
+            {
+                case Event.Updated:
+                case Event.Moved:
+                case Event.Deleted:
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("Unknown event type: \"{0}\".", eventType));
+            }
 #endif
-            Type = type;
+            EventType = eventType;
         }
     }
 }
