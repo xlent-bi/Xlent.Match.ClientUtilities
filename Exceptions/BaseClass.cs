@@ -1,5 +1,7 @@
 ﻿using System;
 
+using Xlent.Match.ClientUtilities.Messages;
+
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
     /// <summary>
@@ -7,17 +9,17 @@ namespace Xlent.Match.ClientUtilities.Exceptions
     /// </summary>
     public abstract class BaseClass : Exception
     {
-        public string ErrorType { get; private set; }
-        public string ErrorLevel { get; private set; }
+        public FailureResponse.ErrorTypeEnum ErrorType { get; private set; }
+        public FailureResponse.ErrorLevelEnum ErrorLevel { get; private set; }
 
-        protected BaseClass(string errorLevel, string errorType, string message)
+        protected BaseClass(FailureResponse.ErrorLevelEnum errorLevel, FailureResponse.ErrorTypeEnum errorType, string message)
             : base(message)
         {
             ErrorLevel = errorLevel;
             ErrorType = errorType;
         }
 
-        protected BaseClass(string errorLevel, string errorType, string message, Exception exception)
+        protected BaseClass(FailureResponse.ErrorLevelEnum errorLevel, FailureResponse.ErrorTypeEnum errorType, string message, Exception exception)
             : base(message, exception)
         {
             ErrorLevel = errorLevel;

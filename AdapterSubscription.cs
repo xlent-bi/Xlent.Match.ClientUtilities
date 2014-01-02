@@ -61,9 +61,8 @@ namespace Xlent.Match.ClientUtilities
             }
             catch (Exceptions.MovedException exception)
             {
-                var failureResponse = new Messages.FailureResponse(request)
+                var failureResponse = new Messages.FailureResponse(request, exception.ErrorLevel, exception.ErrorType)
                 {
-                    ErrorType = exception.ErrorType,
                     Value = exception.NewKeyValue,
                     Message = exception.Message
                 };
@@ -72,9 +71,8 @@ namespace Xlent.Match.ClientUtilities
             }
             catch (Exceptions.BaseClass exception)
             {
-                var failureResponse = new Messages.FailureResponse(request)
+                var failureResponse = new Messages.FailureResponse(request, exception.ErrorLevel, exception.ErrorType)
                 {
-                    ErrorType = exception.ErrorType,
                     Message = exception.Message
                 };
 

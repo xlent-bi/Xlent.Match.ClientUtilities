@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Xlent.Match.ClientUtilities.Messages;
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
@@ -7,10 +7,8 @@ namespace Xlent.Match.ClientUtilities.Exceptions
     /// </summary>
     public abstract class Error : BaseClass
     {
-        public const string Level = "Error";
-
-        protected Error(string errorType, string message)
-            : base(Level, errorType, message)
+        protected Error(FailureResponse.ErrorTypeEnum errorType, string message)
+            : base(FailureResponse.ErrorLevelEnum.Error, errorType, message)
         {
         }
     }

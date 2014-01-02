@@ -1,4 +1,5 @@
 ﻿using System;
+using Xlent.Match.ClientUtilities.Messages;
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
@@ -8,10 +9,8 @@ namespace Xlent.Match.ClientUtilities.Exceptions
     /// </summary>
     public abstract class Warning : BaseClass
     {
-        public const string Level = "Warning";
-
-        protected Warning(string errorType, string message)
-            : base(Level, errorType, message)
+        protected Warning(FailureResponse.ErrorTypeEnum errorType, string message)
+            : base(FailureResponse.ErrorLevelEnum.Warning, errorType, message)
         {
         }
     }

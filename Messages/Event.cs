@@ -14,8 +14,11 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string Moved = "Moved";
         public const string Deleted = "Deleted";
 
+        public enum EventTypeEnum { Updated, Moved, Deleted };
+
         /// <summary>
-        /// The type of event. Mandatory, one of <see cref="Updated"/>, <see cref="Moved"/>, <see cref="Deleted"/>.
+        /// The type of event. Mandatory, one of <see cref="Event.Updated"/>,
+        /// <see cref="Event.Moved"/>, <see cref="Event.Deleted"/>.
         /// </summary>
         [DataMember]
         public string EventType { get; set; }
@@ -71,20 +74,49 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// </summary>
         /// <param name="eventType">The type of event, one of <see cref="Event.Updated"/>, <see cref="Event.Moved"/>
         /// and <see cref="Event.Deleted"/>.</param>
-        public Event(string eventType)
+        public Event(EventTypeEnum eventType)
         {
-#if DEBUG
+
+        }
+
+        /// <summary>
+        /// Translate from <see cref="EventTypeEnum"/> to a string.
+        /// </summary>
+        /// <param name="eventType">The event type.</param>
+        /// <returns>A string representation of the <paramref name="eventType"/>.</returns>
+        public static string TranslateEventType(EventTypeEnum eventType)
+        {
             switch (eventType)
             {
-                case Event.Updated:
-                case Event.Moved:
-                case Event.Deleted:
-                    break;
+                case EventTypeEnum.Updated:
+                    return Updated;
+                case EventTypeEnum.Moved:
+                    return Moved;
+                case EventTypeEnum.Deleted:
+                    return Deleted;
                 default:
                     throw new ArgumentException(String.Format("Unknown event type: \"{0}\".", eventType));
             }
-#endif
-            EventType = eventType;
+        }
+
+        /// <summary>
+        /// Translate from a string to <see cref="EventTypeEnum"/>.
+        /// </summary>
+        /// <param name="eventType">The event type.</param>
+        /// <returns>The enumeration value for <paramref name="eventType"/>.</returns>
+        public static EventTypeEnum TranslateEventType(string eventType)
+        {
+            switch (eventType)
+            {
+                case Updated:
+                    return EventTypeEnum.Updated;
+                case Moved:
+                    return EventTypeEnum.Moved;
+                case Deleted:
+                    return EventTypeEnum.Deleted;
+                default:
+                    throw new ArgumentException(String.Format("Unknown event type: \"{0}\".", eventType));
+            }
         }
     }
 }

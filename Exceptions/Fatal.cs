@@ -1,4 +1,5 @@
 ﻿using System;
+using Xlent.Match.ClientUtilities.Messages;
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
@@ -7,15 +8,13 @@ namespace Xlent.Match.ClientUtilities.Exceptions
     /// </summary>
     public abstract class Fatal : BaseClass
     {
-        public const string Level = "Fatal";
-
-        protected Fatal(string errorType, string message)
-            : base(Level, errorType, message)
+        protected Fatal(FailureResponse.ErrorTypeEnum errorType, string message)
+            : base(FailureResponse.ErrorLevelEnum.Fatal, errorType, message)
         {
         }
 
-        protected Fatal(string errorType, string message, Exception exception)
-            : base(Level, errorType, message, exception)
+        protected Fatal(FailureResponse.ErrorTypeEnum errorType, string message, Exception exception)
+            : base(FailureResponse.ErrorLevelEnum.Fatal, errorType, message, exception)
         {
         }
     }

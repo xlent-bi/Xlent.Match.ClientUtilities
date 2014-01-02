@@ -1,11 +1,11 @@
-﻿namespace Xlent.Match.ClientUtilities.Exceptions
+﻿using Xlent.Match.ClientUtilities.Messages;
+
+namespace Xlent.Match.ClientUtilities.Exceptions
 {
     public class NotImplementedException : Fatal
     {
-        public const string Type = "NotImplemented";
-
         public NotImplementedException(string message)
-            : base(Type, message)
+            : base(FailureResponse.ErrorTypeEnum.NotImplemented, message)
         {
         }
     }

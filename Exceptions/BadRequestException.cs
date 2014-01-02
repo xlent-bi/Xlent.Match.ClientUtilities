@@ -1,11 +1,11 @@
-﻿namespace Xlent.Match.ClientUtilities.Exceptions
+﻿using Xlent.Match.ClientUtilities.Messages;
+
+namespace Xlent.Match.ClientUtilities.Exceptions
 {
     public class BadRequestException : Error
     {
-        public const string Type = "BadReqest";
-
         public BadRequestException(string message)
-            : base(Type, message)
+            : base(FailureResponse.ErrorTypeEnum.BadRequest, message)
         {
         }
     }

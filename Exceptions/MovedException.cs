@@ -1,13 +1,13 @@
-﻿namespace Xlent.Match.ClientUtilities.Exceptions
+﻿using Xlent.Match.ClientUtilities.Messages;
+
+namespace Xlent.Match.ClientUtilities.Exceptions
 {
     public class MovedException : Warning
     {
-        public const string Type = "Moved";
-
         public string NewKeyValue { get; private set; }
 
         public MovedException(string newKeyValue)
-            : base(Type, "Redirection.")
+            : base(FailureResponse.ErrorTypeEnum.Moved, "Redirection.")
         {
             NewKeyValue = newKeyValue;
         }
