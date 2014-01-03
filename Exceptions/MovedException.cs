@@ -2,7 +2,7 @@
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class MovedException : Warning
+    public class MovedException : BaseClass
     {
         public string NewKeyValue { get; private set; }
 

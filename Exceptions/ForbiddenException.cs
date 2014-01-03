@@ -2,7 +2,7 @@
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class ForbiddenException : Error
+    public class ForbiddenException : BaseClass
     {
         public ForbiddenException(string message)
             : base(FailureResponse.ErrorTypeEnum.Forbidden, message)

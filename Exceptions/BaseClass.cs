@@ -10,19 +10,16 @@ namespace Xlent.Match.ClientUtilities.Exceptions
     public abstract class BaseClass : Exception
     {
         public FailureResponse.ErrorTypeEnum ErrorType { get; private set; }
-        public FailureResponse.ErrorLevelEnum ErrorLevel { get; private set; }
 
-        protected BaseClass(FailureResponse.ErrorLevelEnum errorLevel, FailureResponse.ErrorTypeEnum errorType, string message)
+        protected BaseClass(FailureResponse.ErrorTypeEnum errorType, string message)
             : base(message)
         {
-            ErrorLevel = errorLevel;
             ErrorType = errorType;
         }
 
-        protected BaseClass(FailureResponse.ErrorLevelEnum errorLevel, FailureResponse.ErrorTypeEnum errorType, string message, Exception exception)
+        protected BaseClass(FailureResponse.ErrorTypeEnum errorType, string message, Exception exception)
             : base(message, exception)
         {
-            ErrorLevel = errorLevel;
             ErrorType = errorType;
         }
     }

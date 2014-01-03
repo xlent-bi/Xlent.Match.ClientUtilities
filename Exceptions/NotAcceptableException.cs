@@ -2,7 +2,7 @@
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class NotAcceptableException : Error
+    public class NotAcceptableException : BaseClass
     {
         public NotAcceptableException(string message)
             : base(FailureResponse.ErrorTypeEnum.NotAcceptable, message)

@@ -9,11 +9,6 @@ namespace Xlent.Match.ClientUtilities.Messages
     [DataContract(Name = "FailureRequest", Namespace = "http://xlentmatch.com/")]
     public class FailureResponse : Response
     {
-        public const string Information = "Information";
-        public const string Warning = "Warning";
-        public const string Error = "Error";
-        public const string Fatal = "Fatal";
-
         public const string NotFound = "NotFound";
         public const string BadRequest = "BadRequest";
         public const string Forbidden = "Forbidden";
@@ -24,18 +19,10 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string Moved = "Moved";
         public const string InternalServerError = "InternalServerError";
 
-        public enum ErrorLevelEnum { Information, Warning, Error, Fatal };
         public enum ErrorTypeEnum
         {
             NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError
         };
-
-        /// <summary>
-        /// The error level (<see cref="Information"/>, <see cref="Warning"/>, <see cref="Error"/>, <see cref="Fatal"/>)
-        /// Mandatory.
-        /// </summary>
-        [DataMember]
-        public string ErrorLevel { get; set; }
 
         /// <summary>
         /// The error type. See <see cref="ErrorTypeEnum"/> for the different values.
@@ -60,57 +47,11 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// The constructor.
         /// </summary>
         /// <param name="request">The request that this is a response to.</param>
-        /// <param name="errorLevel">The error level for the response.</param>
         /// <param name="errorType">The error type.</param>
-        public FailureResponse(Request request, ErrorLevelEnum errorLevel, ErrorTypeEnum errorType)
+        public FailureResponse(Request request, ErrorTypeEnum errorType)
             : base(request, Response.ResponseTypeEnum.Failure)
         {
-            ErrorLevel = TranslateErrorLevel(errorLevel);
             ErrorType = TranslateErrorType(errorType);
-        }
-
-        /// <summary>
-        /// Translate from <see cref="ErrorLevelEnum"/> to a string.
-        /// </summary>
-        /// <param name="errorLevel">The error level.</param>
-        /// <returns>A string representation of the <paramref name="errorLevel"/>.</returns>
-        public static string TranslateErrorLevel(ErrorLevelEnum errorLevel)
-        {
-            switch (errorLevel)
-            {
-                case ErrorLevelEnum.Information:
-                    return Information;
-                case ErrorLevelEnum.Warning:
-                    return Warning;
-                case ErrorLevelEnum.Error:
-                    return Error;
-                case ErrorLevelEnum.Fatal:
-                    return Fatal;
-                default:
-                    throw new ArgumentException(String.Format("Unknown error level: \"{0}\".", errorLevel));
-            }
-        }
-
-        /// <summary>
-        /// Translate from a string to <see cref="ErrorLevelEnum"/>.
-        /// </summary>
-        /// <param name="errorLevel">The error level.</param>
-        /// <returns>The enumeration value for <paramref name="errorLevel"/>.</returns>
-        public static ErrorLevelEnum TranslateErrorLevel(string errorLevel)
-        {
-            switch (errorLevel)
-            {
-                case Information:
-                    return ErrorLevelEnum.Information;
-                case Warning:
-                    return ErrorLevelEnum.Warning;
-                case Error:
-                    return ErrorLevelEnum.Error;
-                case Fatal:
-                    return ErrorLevelEnum.Fatal;
-                default:
-                    throw new ArgumentException(String.Format("Unknown error level: \"{0}\".", errorLevel));
-            }
         }
 
         /// <summary>

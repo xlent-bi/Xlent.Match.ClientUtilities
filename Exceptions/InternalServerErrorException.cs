@@ -3,7 +3,7 @@ using Xlent.Match.ClientUtilities.Messages;
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class InternalServerErrorException : Fatal
+    public class InternalServerErrorException : BaseClass
     {
         public InternalServerErrorException(string message)
             : base(FailureResponse.ErrorTypeEnum.InternalServerError, message)

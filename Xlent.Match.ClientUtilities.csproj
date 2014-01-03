@@ -103,11 +103,8 @@
   <ItemGroup>
     <Compile Include="AdapterSubscription.cs" />
     <Compile Include="Exceptions\BaseClass.cs" />
-    <Compile Include="Exceptions\Error.cs" />
     <Compile Include="Exceptions\FrozenException.cs" />
     <Compile Include="Exceptions\NotAcceptableException.cs" />
-    <Compile Include="Exceptions\Warning.cs" />
-    <Compile Include="Exceptions\Fatal.cs" />
     <Compile Include="Exceptions\ForbiddenException.cs" />
     <Compile Include="Exceptions\NotImplementedException.cs" />
     <Compile Include="Exceptions\InternalServerErrorException.cs" />
