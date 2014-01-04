@@ -40,7 +40,9 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             var key = otherKey as MainKey;
             if (key == null) return false;
 
-            return (key.ClientName == ClientName) && (key.EntityName == EntityName) && (key.Value == Value);
+            if ((key.ClientName != ClientName) || (key.EntityName != EntityName)) return false;
+            if ((key.MatchId != null) && (key.MatchId == MatchId)) return true;
+            return key.Value == Value;
         }
 
         public override int GetHashCode()

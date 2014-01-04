@@ -76,7 +76,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// and <see cref="Event.Deleted"/>.</param>
         public Event(EventTypeEnum eventType)
         {
-
+            EventType = TranslateEventType(eventType);
         }
 
         /// <summary>

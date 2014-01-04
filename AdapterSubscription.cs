@@ -61,11 +61,13 @@ namespace Xlent.Match.ClientUtilities
             }
             catch (Exceptions.MovedException exception)
             {
+                var oldId = request.KeyValue;
                 var failureResponse = new Messages.FailureResponse(request, exception.ErrorType)
                 {
-                    Value = exception.NewKeyValue,
+                    Value = oldId,
                     Message = exception.Message
                 };
+                failureResponse.MatchObject.MainKey.Value = exception.NewKeyValue;
 
                 SendResponse(failureResponse);
             }
