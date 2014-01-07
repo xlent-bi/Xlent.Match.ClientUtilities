@@ -1,4 +1,6 @@
-﻿namespace Xlent.Match.Test.ClientAdapter
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+namespace ClientAdapter
 {
     static class Program
     {
@@ -8,7 +10,13 @@
         static void Main()
         {
 #if true
-            Subscriber.HandleRequests();
+            List<Task> tasks = new List<Task>();
+            
+            var task = PersonsSubscriber.HandleRequests();
+            tasks.Add(task);
+            task = CustomerSubscriber.HandleRequests();
+            tasks.Add(task);
+            Task.WaitAll(tasks.ToArray());
 #else
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[] 

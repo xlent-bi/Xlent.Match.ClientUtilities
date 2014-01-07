@@ -53,6 +53,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusinessLogic.cs" />
+    <Compile Include="Business\Storage.cs" />
+    <Compile Include="Model\BaseClass.cs" />
+    <Compile Include="Business\Customer.cs" />
+    <Compile Include="Business\Person.cs" />
+    <Compile Include="Model\Customer.cs" />
+    <Compile Include="Model\Person.cs" />
+    <Compile Include="BaseSubscriber.cs" />
+    <Compile Include="CustomerSubscriber.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientService.cs">
@@ -61,7 +69,7 @@
     <Compile Include="ClientService.Designer.cs">
       <DependentUpon>ClientService.cs</DependentUpon>
     </Compile>
-    <Compile Include="Subscriber.cs" />
+    <Compile Include="PersonSubscriber.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
