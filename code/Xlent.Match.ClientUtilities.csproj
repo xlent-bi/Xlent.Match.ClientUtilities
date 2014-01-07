@@ -129,7 +129,6 @@
     <Compile Include="ServiceBus\Queue.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Match.snk" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -55,37 +55,31 @@ namespace Xlent.Match.Test.ClientAdapter
         /// in http://xlentmatch.com/wiki/FailureResponse_Message#Error_Types</remarks>
         private static ClientUtilities.Messages.SuccessResponse HandleRequest(ClientUtilities.Messages.Request request)
         {
-            // Create a basic SuccessResponse message, see http://xlentmatch.com/wiki/SuccessResponse_Message
             var response = new ClientUtilities.Messages.SuccessResponse(request);
-
-            // Check which object this request is for
-            var mainKey = request.MatchObject.Key;
-
             MatchObjectControl control = null;
             switch (request.RequestType)
             {
                 case "Get":
-                    response.MatchObject = BusinessLogic.GetObject(mainKey);
-                    mainKey = response.MatchObject.Key;
+                    response.Data = BusinessLogic.GetData(request.Key);
                     break;
                 case "Update":
-                    BusinessLogic.UpdateObject(request);
-                    control = new MatchObjectControl(mainKey.ClientName, mainKey.EntityName, mainKey.Value);
-                    response.MatchObject = control.MatchObject;
+                    BusinessLogic.UpdateData(request.Key, request.Data);
+                    response.Data = BusinessLogic.GetData(request.Key);
                     break;
                 case "Create":
+                    string matchId = request.Key.MatchId;
                     try
                     {
                         // Maybe the object already exists, then we just need to update it.
-                        BusinessLogic.UpdateObject(request);
+                        BusinessLogic.UpdateData(request.Key, request.Data);
                     }
                     catch (Exception)
                     {
                         // The object did not exist, we must create it
-                        mainKey.Value = BusinessLogic.CreateObject(request);
+                        response.Key.Value = BusinessLogic.CreateData(request.Key, request.Data);
                     }
-                    control = new MatchObjectControl(mainKey.ClientName, mainKey.EntityName, mainKey.Value, mainKey.MatchId);
-                    response.MatchObject = control.MatchObject;
+                    response.Data = BusinessLogic.GetData(response.Key);
+                    response.Key.MatchId = matchId;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("request", string.Format("Unknown request type: \"{0}\"", request.RequestType));
