@@ -24,17 +24,21 @@ namespace Xlent.Match.ClientUtilities.Messages
         public string EventType { get; set; }
 
         /// <summary>
-        /// Information about the object that has changed.
-        /// The <see cref="Key"/> part of the <see cref="MatchObject"/> is mandatory.
-        /// The <see cref="Data"/> part is normally left empty, but can be filled in for
-        /// events of type <see cref="Updated"/> to avoid being called by Match later.
+        /// The identity of the object that has changed.
         /// Mandatory.
         /// </summary>
         /// <remarks>
         /// For an event of type <see cref="Moved"/>, this contains the new identity for the object.
         /// </remarks>
         [DataMember]
-        public MatchObject MatchObject { get; set; }
+        public Key Key { get; set; }
+
+        /// <summary>
+        /// Information about the object that has changed.
+        /// This is normally left empty, but can be filled in for events of type <see cref="Updated"/> to avoid being called by Match later.
+        /// </summary>
+        [DataMember]
+        public Data Data { get; set; }
 
         /// <summary>
         /// Mandatory for events of type <see cref="Moved"/>. It should hold the old object identifier,

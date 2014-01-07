@@ -38,6 +38,14 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         [DataMember]
         public string MatchId { get; set; }
 
+        public Key(string clientName, string entityName, string value, string matchId = null)
+        {
+            ClientName = clientName;
+            EntityName = entityName;
+            Value = value;
+            MatchId = matchId;
+        }
+
         public override bool Equals(object otherKey)
         {
             var key = otherKey as Key;

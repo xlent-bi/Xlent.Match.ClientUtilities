@@ -21,6 +21,12 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
 
         public static DataContractSerializer Serializer = new DataContractSerializer(typeof(MatchObject));
 
+        public MatchObject(Key key, Data data = null)
+        {
+            Key = key;
+            Data = data;
+        }
+
         public override bool Equals(object otherObject)
         {
             var o = otherObject as MatchObject;

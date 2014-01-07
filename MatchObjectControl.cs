@@ -13,16 +13,7 @@ namespace Xlent.Match.ClientUtilities
 
         public MatchObjectControl(string clientName, string entity, string id, string matchId = null)
         {
-            MatchObject = new MatchObject
-            {
-                Key = new Key
-                {
-                    ClientName = clientName,
-                    EntityName = entity,
-                    MatchId = matchId,
-                    Value = id
-                }
-            };
+            MatchObject = new MatchObject(new Key(clientName, entity, id, matchId));
         }
 
         public MatchObjectControl(MatchObject matchObject)
@@ -30,13 +21,9 @@ namespace Xlent.Match.ClientUtilities
             MatchObject = matchObject;
         }
 
-        public MatchObjectControl(Key key, Data data)
+        public MatchObjectControl(Key key, Data data = null)
         {
-            MatchObject = new MatchObject
-            {
-                Key = key,
-                Data = (data ?? new Data())
-            };
+            MatchObject = new MatchObject(key, data);
         }
 
 

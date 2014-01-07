@@ -82,10 +82,7 @@ namespace Xlent.Match.ClientUtilities.Messages
             ResponseType = TranslateResponseType(responseType);
             RequestType = request.RequestType;
             ProcessId = request.ProcessId;
-            MatchObject = new MatchObject()
-            {
-                Key = request.MatchObject.Key
-            };
+            MatchObject = new MatchObject(request.MatchObject.Key);
         }
 
         /// <summary>

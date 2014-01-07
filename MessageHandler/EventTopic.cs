@@ -47,7 +47,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         {
             var theEvent = new Event(Event.EventTypeEnum.Updated)
             {
-                MatchObject = GetMatchObject(ClientName, entityName, keyValue)
+                Key = new MatchObjectModel.Key(ClientName, entityName, keyValue)
             };
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);
@@ -59,7 +59,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         {
             var theEvent = new Event(Event.EventTypeEnum.Deleted)
             {
-                MatchObject = GetMatchObject(ClientName, entityName, keyValue)
+                Key = new MatchObjectModel.Key(ClientName, entityName, keyValue)
             };
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);
@@ -71,7 +71,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         {
             var theEvent = new Event(Event.EventTypeEnum.Moved)
             {
-                MatchObject = GetMatchObject(ClientName, entityName, newKeyValue),
+                Key = new MatchObjectModel.Key(ClientName, entityName, newKeyValue),
                 OldId = oldKeyValue
             };
 
@@ -82,17 +82,9 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         private static MatchObjectModel.MatchObject GetMatchObject(string clientName, string entityName, string keyValue)
         {
-            var mainKey = new MatchObjectModel.Key()
-               {
-                   ClientName = clientName,
-                   EntityName = entityName,
-                   Value = keyValue
-               };
+            var mainKey = new MatchObjectModel.Key(clientName, entityName, keyValue);
 
-            return new MatchObjectModel.MatchObject()
-            {
-                Key = mainKey
-            };
+            return new MatchObjectModel.MatchObject(mainKey);
         }
 
         private static void AddOptionalFields(Event theEvent, string userName = null, DateTime? timeStamp = null, string externalReference = null)
