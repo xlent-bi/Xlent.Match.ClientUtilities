@@ -10,15 +10,22 @@ using System.Threading.Tasks;
 
 namespace Crm.ClientAdapter
 {
-    public partial class ClientService : ServiceBase
+    public partial class ClientAdapterService : ServiceBase
     {
-        public ClientService()
+        public ClientAdapterService()
         {
             InitializeComponent();
         }
 
         protected override void OnStart(string[] args)
         {
+            List<Task> tasks = new List<Task>();
+
+            var task = PersonsSubscriber.HandleRequests();
+            tasks.Add(task);
+            task = CustomerSubscriber.HandleRequests();
+            tasks.Add(task);
+            Task.WaitAll(tasks.ToArray());
         }
 
         protected override void OnStop()

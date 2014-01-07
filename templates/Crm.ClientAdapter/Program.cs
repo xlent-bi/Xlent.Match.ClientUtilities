@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ServiceProcess;
 using System.Threading.Tasks;
 namespace Crm.ClientAdapter
 {
@@ -21,7 +22,7 @@ namespace Crm.ClientAdapter
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[] 
             { 
-                new Service1() 
+                new ClientAdapterService() 
             };
             ServiceBase.Run(ServicesToRun);
 #endif
