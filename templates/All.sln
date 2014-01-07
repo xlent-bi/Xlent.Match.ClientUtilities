@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientAdapter", "ClientAdapter\ClientAdapter.csproj", "{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xlent.Match.ClientUtilities", "..\code\Xlent.Match.ClientUtilities.csproj", "{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		AccTest|Any CPU = AccTest|Any CPU
+		Debug|Any CPU = Debug|Any CPU
+		IntTest|Any CPU = IntTest|Any CPU
+		Release|Any CPU = Release|Any CPU
+		SysTest|Any CPU = SysTest|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.AccTest|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.AccTest|Any CPU.Build.0 = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.IntTest|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.IntTest|Any CPU.Build.0 = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.SysTest|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}.SysTest|Any CPU.Build.0 = Release|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.AccTest|Any CPU.ActiveCfg = AccTest|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.AccTest|Any CPU.Build.0 = AccTest|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.IntTest|Any CPU.ActiveCfg = IntTest|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.IntTest|Any CPU.Build.0 = IntTest|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.SysTest|Any CPU.ActiveCfg = SysTest|Any CPU
+		{59EFD628-34D4-4DE1-A42E-4FC4E7C03986}.SysTest|Any CPU.Build.0 = SysTest|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
