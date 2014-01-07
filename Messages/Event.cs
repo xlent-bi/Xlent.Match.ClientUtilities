@@ -25,8 +25,8 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         /// <summary>
         /// Information about the object that has changed.
-        /// The <see cref="MainKey"/> part of the <see cref="MatchObject"/> is mandatory.
-        /// The <see cref="ObjectData"/> part is normally left empty, but can be filled in for
+        /// The <see cref="Key"/> part of the <see cref="MatchObject"/> is mandatory.
+        /// The <see cref="Data"/> part is normally left empty, but can be filled in for
         /// events of type <see cref="Updated"/> to avoid being called by Match later.
         /// Mandatory.
         /// </summary>

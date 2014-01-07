@@ -12,23 +12,26 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     /// The identifier information for the MatchObject.
     /// </summary>
     [DataContract]
-    public class MainKey
+    public class Key
     {
         /// <summary>
         /// The name of the client that has this object
         /// </summary>
         [DataMember]
         public string ClientName { get; set; }
+
         /// <summary>
         /// The name of the entity that this object belongs to
         /// </summary>
         [DataMember]
         public string EntityName { get; set; }
+
         /// <summary>
         /// The identity in the client for this object.
         /// </summary>
         [DataMember]
         public string Value { get; set; }
+
         /// <summary>
         /// The identity in XlentMatch for this object.
         /// </summary>
@@ -37,7 +40,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
 
         public override bool Equals(object otherKey)
         {
-            var key = otherKey as MainKey;
+            var key = otherKey as Key;
             if (key == null) return false;
 
             if ((key.ClientName != ClientName) || (key.EntityName != EntityName)) return false;

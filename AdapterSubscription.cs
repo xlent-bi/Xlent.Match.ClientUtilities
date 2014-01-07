@@ -67,7 +67,7 @@ namespace Xlent.Match.ClientUtilities
                     Value = oldId,
                     Message = exception.Message
                 };
-                failureResponse.MatchObject.MainKey.Value = exception.NewKeyValue;
+                failureResponse.MatchObject.Key.Value = exception.NewKeyValue;
 
                 SendResponse(failureResponse);
             }

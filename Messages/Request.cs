@@ -43,25 +43,25 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// The client that the request is directed to. You should only subscribe to your own messages.
         /// Mandatory.
         /// </summary>
-        public string ClientName { get { return MatchObject.MainKey.ClientName; } }
+        public string ClientName { get { return MatchObject.Key.ClientName; } }
 
         /// <summary>
         /// The entity within your client that the request is referring to.
         /// Mandatory.
         /// </summary>
-        public string EntityName { get { return MatchObject.MainKey.EntityName; } }
+        public string EntityName { get { return MatchObject.Key.EntityName; } }
 
         /// <summary>
         /// The identity of the object that the request is referring to.
         /// Mandatory for requests of type <see cref="Request.Update"/> and <see cref="Request.Get"/>.
         /// </summary>
-        public string KeyValue { get { return MatchObject.MainKey.Value; } }
+        public string KeyValue { get { return MatchObject.Key.Value; } }
 
         /// <summary>
         /// The internal Match identity of the object that the request is referring to.
         /// Mandatory for requests of type <see cref="Request.Create"/>.
         /// </summary>
-        public string MatchId { get { return MatchObject.MainKey.MatchId; } }
+        public string MatchId { get { return MatchObject.Key.MatchId; } }
         
         public Request(RequestTypeEnum requestType)
         {

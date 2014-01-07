@@ -113,11 +113,9 @@
     <Compile Include="Exceptions\GoneException.cs" />
     <Compile Include="Exceptions\NotFoundException.cs" />
     <Compile Include="MatchObjectControl.cs" />
-    <Compile Include="MatchObjectModel\NestedProperty.cs" />
-    <Compile Include="MatchObjectModel\ObjectData.cs" />
-    <Compile Include="MatchObjectModel\MainKey.cs" />
+    <Compile Include="MatchObjectModel\Data.cs" />
+    <Compile Include="MatchObjectModel\Key.cs" />
     <Compile Include="MatchObjectModel\MatchObject.cs" />
-    <Compile Include="MatchObjectModel\Property.cs" />
     <Compile Include="MessageHandler\EventTopic.cs" />
     <Compile Include="Messages\Event.cs" />
     <Compile Include="Messages\SuccessResponse.cs" />

@@ -15,9 +15,9 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     public class MatchObject
     {
         [DataMember]
-        public MainKey MainKey { get; set; }
+        public Key Key { get; set; }
         [DataMember]
-        public ObjectData ObjectData { get; set; }
+        public Data Data { get; set; }
 
         public static DataContractSerializer Serializer = new DataContractSerializer(typeof(MatchObject));
 
@@ -26,17 +26,17 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             var o = otherObject as MatchObject;
             if (o == null) return false;
 
-            return MainKey.Equals(o.MainKey);
+            return Key.Equals(o.Key);
         }
 
         public override int GetHashCode()
         {
-            return MainKey.GetHashCode();
+            return Key.GetHashCode();
         }
 
         public override string ToString()
         {
-            return MainKey.ToString();
+            return Key.ToString();
         }
     }
 }

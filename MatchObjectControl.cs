@@ -9,33 +9,20 @@ namespace Xlent.Match.ClientUtilities
     {
         public MatchObject MatchObject { get; private set; }
 
-        public MainKey MainKey { get { return MatchObject.MainKey; } }
+        public Key MainKey { get { return MatchObject.Key; } }
 
-        public MatchObjectControl(string clientName, string entity, string id, string matchId)
+        public MatchObjectControl(string clientName, string entity, string id, string matchId = null)
         {
             MatchObject = new MatchObject
             {
-                MainKey = new MainKey
+                Key = new Key
                 {
                     ClientName = clientName,
                     EntityName = entity,
                     MatchId = matchId,
                     Value = id
-                },
-                ObjectData = new ObjectData()
+                }
             };
-
-            if (MatchObject.ObjectData == null)
-                MatchObject.ObjectData = new ObjectData();
-            if (MatchObject.ObjectData.Properties == null)
-                MatchObject.ObjectData.Properties = new List<Property>();
-            if (MatchObject.ObjectData.NestedProperties == null)
-                MatchObject.ObjectData.NestedProperties = new List<NestedProperty>();
-        }
-
-        public MatchObjectControl(string client, string entity, string id)
-            : this(client, entity, id, null)
-        {
         }
 
         public MatchObjectControl(MatchObject matchObject)
@@ -43,12 +30,12 @@ namespace Xlent.Match.ClientUtilities
             MatchObject = matchObject;
         }
 
-        public MatchObjectControl(MainKey mainKey, ObjectData objectData)
+        public MatchObjectControl(Key key, Data data)
         {
             MatchObject = new MatchObject
             {
-                MainKey = mainKey,
-                ObjectData = (objectData ?? new ObjectData())
+                Key = key,
+                Data = (data ?? new Data())
             };
         }
 
@@ -60,9 +47,15 @@ namespace Xlent.Match.ClientUtilities
 
         public string GetPropertyValue(string name, bool okIfNotExist)
         {
-            Debug.Assert(MatchObject != null);
-            var property = GetProperty(name, okIfNotExist);
-            return null == property ? null : property.Value;
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+            if (MatchObject == null) throw new ArgumentNullException("this.MatchObject");
+            if (MatchObject.Data == null)
+            {
+                if (okIfNotExist) return null;
+                throw new ArgumentOutOfRangeException("name");
+            }
+
+            return MatchObject.Data.GetPropertyValue(name, okIfNotExist);
         }
 
         /// <summary>
@@ -72,137 +65,73 @@ namespace Xlent.Match.ClientUtilities
         public void Update(MatchObject matchObject)
         {
             Debug.Assert(MatchObject != null);
-            foreach (var property in matchObject.ObjectData.Properties)
+            if (matchObject.Data == null)
             {
-                SetProperties(true, property.Name, property.Value);
+                this.MatchObject.Data = null;
             }
-        }
-        
-        private List<Property> _regularProperties;
-        /// <summary>
-        /// A subset of <see cref="MatchObject.DataObject.Properties"/>; the regular properties, i.e. properties that are not keys or references.
-        /// </summary>
-        public List<Property> RegularProperties
-        {
-            get
+            else
             {
-                if (null == _regularProperties)
-                {
-                    UpdatePropertyLists();
-                }
-                return _regularProperties;
+                this.MatchObject.Data = new Data();
+                Update(matchObject.Data, this.MatchObject.Data);
             }
         }
 
-
-        private List<Property> _keyProperties;
-        /// <summary>
-        /// A subset of <see cref="Properties"/>; the properties that are keys for this object.
-        /// </summary>
-        public List<Property> KeyProperties
+        private void Update(Data source, Data target)
         {
-            get
+            if (source == null)
             {
-                if (null == _keyProperties)
-                {
-                    UpdatePropertyLists();
-                }
-                return _keyProperties;
+                throw new ArgumentNullException("source");
             }
-        }
 
-        private List<Property> _referenceProperties;
-        /// <summary>
-        /// A subset of <see cref="Properties"/>; the properties that are references to other objects.
-        /// </summary>
-        public List<Property> ReferenceProperties
-        {
-            get
+            if (source.Properties == null)
             {
-                if (null == _referenceProperties)
-                {
-                    UpdatePropertyLists();
-                }
-                return _referenceProperties;
+                target.Properties = null;
             }
-        }
-
-        /// <summary>
-        /// Call this to invalidate the three property lists; <see cref="RegularProperties"/>, 
-        /// <see cref="KeyProperties"/>, <see cref="ReferenceProperties"/>.
-        /// </summary>
-        /// <remarks>Call this after you have changed the property list <see cref="Properties"/>.</remarks>
-        public void InvalidateProperties()
-        {
-            _regularProperties = null;
-            _keyProperties = null;
-            _referenceProperties = null;
-        }
-
-        /// <summary>
-        /// Call the three property lists; <see cref="RegularProperties"/>, 
-        /// <see cref="KeyProperties"/>, <see cref="ReferenceProperties"/>.
-        /// </summary>
-        private void UpdatePropertyLists()
-        {
-            _regularProperties = new List<Property>();
-            _keyProperties = new List<Property>();
-            _referenceProperties = new List<Property>();
-            if (null != MatchObject.ObjectData.Properties)
+            else
             {
-                foreach (var property in MatchObject.ObjectData.Properties)
+                target.Properties = new Dictionary<string, string>(source.Properties);
+            }
+
+            if (source.NestedProperties == null)
+            {
+                target.NestedProperties = null;
+            }
+            else
+            {
+                target.NestedProperties = new Dictionary<string, Data>(source.NestedProperties.Count);
+                foreach (var nestedProperty in source.NestedProperties)
                 {
-                    if (property.IsKey) _keyProperties.Add(property);
-                    else if (property.IsRegular) _regularProperties.Add(property);
-                    else _regularProperties.Add(property);
+                    var data = new Data();
+                    Update(nestedProperty.Value, data);
+                    target.NestedProperties.Add(nestedProperty.Key, data);
                 }
             }
+
         }
 
         #region Test
         public void SetProperties(bool okIfNotExists, params string[] arguments)
         {
-            List<Property> properties = null;
-            if (null == MatchObject.ObjectData.Properties)
+            if (arguments.Length < 1) return;
+
+            if (null == MatchObject.Data)
             {
-                properties = new List<Property>(arguments.Length / 2);
+                MatchObject.Data = new Data();
             }
-            else
+
+            if (null == MatchObject.Data.Properties)
             {
-                properties = new List<Property>(MatchObject.ObjectData.Properties);
+                MatchObject.Data.Properties = new Dictionary<string, string>(arguments.Length / 2);
             }
 
             for (int i = 0; i < arguments.Length; i += 2)
             {
                 string name = arguments[i];
                 string value = arguments[i + 1];
-                Property property = GetProperty(name, true);
-                if (null == property)
-                {
-                    property = new Property(name, value);
-                    properties.Add(property);
-                }
-                else
-                {
-                    property.Value = value;
-                }
+                MatchObject.Data.Properties[name] = value;
             }
-            MatchObject.ObjectData.Properties = properties;
-            InvalidateProperties();
         }
 
-        public Property GetProperty(string name, bool okIfNotExists)
-        {
-            if (null != MatchObject.ObjectData.Properties)
-            {
-                foreach (Property property in MatchObject.ObjectData.Properties)
-                {
-                    if (property.Name == name) return property;
-                }
-            }
-            if (okIfNotExists) return null;
-            throw new ApplicationException();
-        }
 
         public int FindDifferingProperty(params string[] arguments)
         {
@@ -210,9 +139,9 @@ namespace Xlent.Match.ClientUtilities
             {
                 var name = arguments[i];
                 var value = arguments[i + 1];
-                var property = GetProperty(name, true);
-                if ((null == value) && (null == property)) continue;
-                if ((null == property) || (value != property.Value))
+                var oldValue = GetPropertyValue(name, true);
+                if ((null == value) && (null == oldValue)) continue;
+                if (value != oldValue)
                 {
                     return i + 1;
                 }

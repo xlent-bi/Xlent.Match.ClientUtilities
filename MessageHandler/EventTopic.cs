@@ -82,7 +82,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         private static MatchObjectModel.MatchObject GetMatchObject(string clientName, string entityName, string keyValue)
         {
-            var mainKey = new MatchObjectModel.MainKey()
+            var mainKey = new MatchObjectModel.Key()
                {
                    ClientName = clientName,
                    EntityName = entityName,
@@ -91,7 +91,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
             return new MatchObjectModel.MatchObject()
             {
-                MainKey = mainKey
+                Key = mainKey
             };
         }
 

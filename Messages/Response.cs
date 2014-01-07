@@ -48,13 +48,13 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// The <see cref="Request.ClientName"/>.
         /// Mandatory.
         /// </summary>
-        public string ClientName { get { return MatchObject.MainKey.ClientName; } }
+        public string ClientName { get { return MatchObject.Key.ClientName; } }
 
         /// <summary>
         /// The <see cref="Request.EntityName"/>.
         /// Mandatory.
         /// </summary>
-        public string EntityName { get { return MatchObject.MainKey.EntityName; } }
+        public string EntityName { get { return MatchObject.Key.EntityName; } }
 
         /// <summary>
         /// For requests of type <see cref="Request.Update"/> and <see cref="Request.Get"/>
@@ -63,13 +63,13 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// object that was created (or found to be already existing).
         /// Mandatory.
         /// </summary>
-        public string KeyValue { get { return MatchObject.MainKey.Value; } }
+        public string KeyValue { get { return MatchObject.Key.Value; } }
 
         /// <summary>
         /// For requests of type <see cref="Request.Create"/>
         /// this property must have the same value as  <see cref="Request.MatchId"/>.
         /// </summary>
-        public string MatchId { get { return MatchObject.MainKey.MatchId; } }
+        public string MatchId { get { return MatchObject.Key.MatchId; } }
 
         /// <summary>
         /// Constructor for this class.
@@ -84,7 +84,7 @@ namespace Xlent.Match.ClientUtilities.Messages
             ProcessId = request.ProcessId;
             MatchObject = new MatchObject()
             {
-                MainKey = request.MatchObject.MainKey
+                Key = request.MatchObject.Key
             };
         }
 
