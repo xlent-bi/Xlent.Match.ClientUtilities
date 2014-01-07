@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using ClientAdapter.Model;
+using Crm.ClientAdapter.Model;
 
-namespace ClientAdapter.Business
+namespace Crm.ClientAdapter.Business
 {
     public class Storage<T>
     {

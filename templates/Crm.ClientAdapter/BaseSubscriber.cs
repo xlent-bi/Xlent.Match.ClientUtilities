@@ -3,7 +3,7 @@ using System;
 using System.Threading;
 using Xlent.Match.ClientUtilities;
 
-namespace ClientAdapter
+namespace Crm.ClientAdapter
 {
     public class BaseSubscriber
     {

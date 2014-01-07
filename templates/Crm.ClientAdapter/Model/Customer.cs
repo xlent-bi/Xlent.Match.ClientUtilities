@@ -1,4 +1,4 @@
-﻿namespace ClientAdapter.Model
+﻿namespace Crm.ClientAdapter.Model
 {
     public class Customer : BaseClass
     {

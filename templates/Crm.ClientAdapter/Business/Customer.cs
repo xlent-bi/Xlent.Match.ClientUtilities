@@ -1,4 +1,4 @@
-﻿namespace ClientAdapter.Business
+﻿namespace Crm.ClientAdapter.Business
 {
     public class Customer
     {

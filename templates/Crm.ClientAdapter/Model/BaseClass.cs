@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClientAdapter.Model
+namespace Crm.ClientAdapter.Model
 {
     public class BaseClass
     {

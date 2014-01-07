@@ -1,4 +1,4 @@
-﻿namespace ClientAdapter
+﻿namespace Crm.ClientAdapter
 {
     partial class ClientService
     {

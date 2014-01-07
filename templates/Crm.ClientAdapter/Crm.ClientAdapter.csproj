@@ -7,8 +7,8 @@
     <ProjectGuid>{1D6DFAD2-38DA-4549-96B4-733DD85D5E7B}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ClientAdapter</RootNamespace>
-    <AssemblyName>ClientAdapter</AssemblyName>
+    <RootNamespace>Crm.ClientAdapter</RootNamespace>
+    <AssemblyName>Crm.ClientAdapter</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

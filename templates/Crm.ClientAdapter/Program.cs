@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-namespace ClientAdapter
+namespace Crm.ClientAdapter
 {
     static class Program
     {
