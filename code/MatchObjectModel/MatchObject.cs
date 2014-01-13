@@ -51,7 +51,6 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         }
 
 
-
         public void SetProperties(bool okIfNotExists, params string[] arguments)
         {
             if (arguments.Length < 1) return;
@@ -62,6 +61,16 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             }
 
             Data.SetProperties(okIfNotExists, arguments);
+        }
+
+        public void SetProperty(string path, string value)
+        {
+            if (null == Data)
+            {
+                Data = new Data();
+            }
+
+            Data.SetPropertyValue(path, value);
         }
 
         public string GetPropertyValue(string name)
