@@ -80,13 +80,6 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
             Send(theEvent);
         }
 
-        private static MatchObjectModel.MatchObject GetMatchObject(string clientName, string entityName, string keyValue)
-        {
-            var mainKey = new MatchObjectModel.Key(clientName, entityName, keyValue);
-
-            return new MatchObjectModel.MatchObject(mainKey);
-        }
-
         private static void AddOptionalFields(Event theEvent, string userName = null, DateTime? timeStamp = null, string externalReference = null)
         {
             DateTime time = timeStamp??DateTime.UtcNow;

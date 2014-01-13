@@ -21,6 +21,11 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
 
         public static DataContractSerializer Serializer = new DataContractSerializer(typeof(MatchObject));
 
+        public MatchObject(string clientName, string entityName, string keyValue, string matchId = null)
+            : this(new Key(clientName, entityName, keyValue, matchId))
+        {
+        }
+
         public MatchObject(Key key, Data data = null)
         {
             Key = key;
@@ -43,6 +48,27 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         public override string ToString()
         {
             return Key.ToString();
+        }
+
+
+
+        public void SetProperties(bool okIfNotExists, params string[] arguments)
+        {
+            if (arguments.Length < 1) return;
+
+            if (null == Data)
+            {
+                Data = new Data();
+            }
+
+            Data.SetProperties(okIfNotExists, arguments);
+        }
+
+        public string GetPropertyValue(string name)
+        {
+            if (null == Data) return null;
+
+            return Data.GetPropertyValue(name, true);
         }
     }
 }

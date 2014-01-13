@@ -112,7 +112,6 @@
     <Compile Include="Exceptions\BadRequestException.cs" />
     <Compile Include="Exceptions\GoneException.cs" />
     <Compile Include="Exceptions\NotFoundException.cs" />
-    <Compile Include="MatchObjectControl.cs" />
     <Compile Include="MatchObjectModel\Data.cs" />
     <Compile Include="MatchObjectModel\Key.cs" />
     <Compile Include="MatchObjectModel\MatchObject.cs" />

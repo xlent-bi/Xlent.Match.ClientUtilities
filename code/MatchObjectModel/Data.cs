@@ -10,7 +10,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     /// <summary>
     /// Container for all data for a <see cref=" MatchObject"/>.
     /// </summary>
-    [DataContract]
+    [DataContract(Name = "Data", Namespace = "http://xlentmatch.com/")]
     public class Data
     {
         [DataMember]
@@ -129,6 +129,66 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
                 }
             }
             return false;
+        }
+
+        public string FindDifferingPropertyName(params string[] arguments)
+        {
+            for (var i = 0; i < arguments.Length; i += 2)
+            {
+                var name = arguments[i];
+                var value = arguments[i + 1];
+                var oldValue = GetPropertyValue(name, true);
+                if ((null == value) && (null == oldValue)) continue;
+                if (value != oldValue)
+                {
+                    return name;
+                }
+            }
+            return null;
+        }
+
+        public void Update(Data source)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
+
+            if (source.Properties == null)
+            {
+                Properties = null;
+            }
+            else
+            {
+                Properties = new Dictionary<string, string>(source.Properties);
+            }
+
+            if (source.NestedProperties == null)
+            {
+                NestedProperties = null;
+            }
+            else
+            {
+                NestedProperties = new Dictionary<string, Data>(source.NestedProperties.Count);
+                foreach (var nestedProperty in source.NestedProperties)
+                {
+                    var data = new Data();
+                    data.Update(nestedProperty.Value);
+                    NestedProperties.Add(nestedProperty.Key, data);
+                }
+            }
+        }
+
+        public void SetProperties(bool okIfNotExists, params string[] arguments)
+        {
+            if (arguments.Length < 1) return;
+
+            for (int i = 0; i < arguments.Length; i += 2)
+            {
+                string name = arguments[i];
+                string value = arguments[i + 1];
+                SetPropertyValue(name, value);
+            }
         }
     }
 }

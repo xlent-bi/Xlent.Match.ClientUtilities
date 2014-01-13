@@ -11,7 +11,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     /// <summary>
     /// The identifier information for the MatchObject.
     /// </summary>
-    [DataContract]
+    [DataContract(Name = "Key", Namespace = "http://xlentmatch.com/")]
     public class Key
     {
         /// <summary>
