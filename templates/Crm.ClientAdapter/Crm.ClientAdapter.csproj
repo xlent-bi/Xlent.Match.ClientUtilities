@@ -59,8 +59,8 @@
     <Compile Include="Business\Person.cs" />
     <Compile Include="Model\Customer.cs" />
     <Compile Include="Model\Person.cs" />
-    <Compile Include="BaseSubscriber.cs" />
-    <Compile Include="CustomerSubscriber.cs" />
+    <Compile Include="Subscriber\BaseClass.cs" />
+    <Compile Include="Subscriber\Customer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientAdapterService.cs">
@@ -69,7 +69,7 @@
     <Compile Include="ClientAdapterService.Designer.cs">
       <DependentUpon>ClientAdapterService.cs</DependentUpon>
     </Compile>
-    <Compile Include="PersonSubscriber.cs" />
+    <Compile Include="Subscriber\Person.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

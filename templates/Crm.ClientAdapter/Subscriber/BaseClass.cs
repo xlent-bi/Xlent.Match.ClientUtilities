@@ -3,12 +3,15 @@ using System;
 using System.Threading;
 using Xlent.Match.ClientUtilities;
 
-namespace Crm.ClientAdapter
+namespace Crm.ClientAdapter.Subscriber
 {
-    public class BaseSubscriber
+    public class BaseClass
     {
+        private const string clientName = "Crm";
+
         /// <summary>
         /// This is the eternal loop that will receive all requests and call <see cref="HandleRequest"/> for each.
+        /// If there is a problem, then it will retry, waiting longer and longer time between retries.
         /// </summary>
         public static void HandleRequests(string entityName, AdapterSubscription.RequestDelegate requestHandler)
         {
@@ -21,7 +24,7 @@ namespace Crm.ClientAdapter
                 {
                     if (subscription == null)
                     {
-                        subscription = new AdapterSubscription("Crm", entityName);
+                        subscription = new AdapterSubscription(clientName, entityName);
                     }
 
                     // Handle one request
@@ -31,6 +34,7 @@ namespace Crm.ClientAdapter
                 }
                 catch (Exception ex)
                 {
+                    // TODO: Add some logging here
                     // There was a problem with receiving a request, wait some time before we try again.
                     Thread.Sleep(sleepTime);
                     // Next time wait twice as long

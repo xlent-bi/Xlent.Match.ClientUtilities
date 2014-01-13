@@ -21,9 +21,9 @@ namespace Crm.ClientAdapter
         {
             List<Task> tasks = new List<Task>();
 
-            var task = PersonsSubscriber.HandleRequests();
+            var task = Subscriber.PersonsSubscriber.HandleRequests();
             tasks.Add(task);
-            task = CustomerSubscriber.HandleRequests();
+            task = Subscriber.Customer.HandleRequests();
             tasks.Add(task);
             Task.WaitAll(tasks.ToArray());
         }
