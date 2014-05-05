@@ -17,18 +17,20 @@ namespace Xlent.Match.ClientUtilities.Messages
         public enum ResponseTypeEnum { Success, Failure };
 
         /// <summary>
-        /// The type of the response. Mandatory, one of <see cref="Event.Success"/>,
-        /// and <see cref="Event.Failure"/>.
-        [DataMember]
-        public string ResponseType { get; set; }
+        /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
+        /// and <see cref="Response.Failure"/>.
+        [DataMember(Name = "ResponseType")]
+        public string ResponseType_UseEnumVersionInstead { get; set; }
+        public ResponseTypeEnum ResponseType { get { return TranslateResponseType(ResponseType_UseEnumVersionInstead); } }
 
         /// <summary>
         /// The type of the request.
         /// Mandatory, one of <see cref="Request.Create"/>,  <see cref="Request.Update"/>
         /// and  <see cref="Request.Get"/>.
         /// </summary>
-        [DataMember]
-        public string RequestType { get; set; }
+        [DataMember(Name = "RequestType")]
+        public string RequestType_UseEnumVersionInstead { get; set; }
+        public Request.RequestTypeEnum RequestType { get { return Request.TranslateRequestType(RequestType_UseEnumVersionInstead); } }
 
         /// <summary>
         /// The <see cref="Request.ProcessId"/>.
@@ -86,8 +88,8 @@ namespace Xlent.Match.ClientUtilities.Messages
         protected Response(Request request, ResponseTypeEnum responseType)
         {
 
-            ResponseType = TranslateResponseType(responseType);
-            RequestType = request.RequestType;
+            ResponseType_UseEnumVersionInstead = TranslateResponseType(responseType);
+            RequestType_UseEnumVersionInstead = request.RequestType;
             ProcessId = request.ProcessId;
             Key = request.Key;
         }

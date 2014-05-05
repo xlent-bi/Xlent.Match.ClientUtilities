@@ -17,6 +17,8 @@
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
     <TargetFrameworkProfile />
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\VSO\Integration\Branches\3\4 DEV\Match3\Solutions\Sats.Sip.Systems.Crm\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -102,7 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdapterSubscription.cs" />
-    <Compile Include="Exceptions\BaseClass.cs" />
+    <Compile Include="Exceptions\MatchException.cs" />
     <Compile Include="Exceptions\FrozenException.cs" />
     <Compile Include="Exceptions\NotAcceptableException.cs" />
     <Compile Include="Exceptions\ForbiddenException.cs" />
@@ -134,6 +136,7 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

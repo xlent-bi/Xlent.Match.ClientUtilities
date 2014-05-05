@@ -2,7 +2,7 @@
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class NotImplementedException : BaseClass
+    public class NotImplementedException : MatchException
     {
         public NotImplementedException(string message)
             : base(FailureResponse.ErrorTypeEnum.NotImplemented, message)

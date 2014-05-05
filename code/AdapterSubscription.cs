@@ -71,7 +71,7 @@ namespace Xlent.Match.ClientUtilities
 
                 SendResponse(failureResponse);
             }
-            catch (Exceptions.BaseClass exception)
+            catch (Exceptions.MatchException exception)
             {
                 var failureResponse = new Messages.FailureResponse(request, exception.ErrorType)
                 {
