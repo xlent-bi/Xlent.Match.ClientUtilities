@@ -15,7 +15,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string Get = "Get";
 
         public enum RequestTypeEnum { Create, Update, Get };
-        
+
         /// <summary>
         /// The type of the request.
         /// Mandatory, one of <see cref="Request.Create"/>,  <see cref="Request.Update"/>
