@@ -39,13 +39,20 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public QueueClient Client { get; private set; }
 
-        public void Enqueue<T>(T message)
+        public void Enqueue<T>(T message, IDictionary<string, object> properties = null)
         {
 
             var dataContractSerializer =
                 new DataContractSerializer(typeof(T));
 
             var m = new BrokeredMessage(message, dataContractSerializer);
+            if (properties != null)
+            {
+                foreach (var property in properties)
+                {
+                    m.Properties.Add(property);
+                }
+            }
             Client.Send(m);
         }
 
