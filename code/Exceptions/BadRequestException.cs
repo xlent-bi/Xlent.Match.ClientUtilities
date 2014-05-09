@@ -2,7 +2,7 @@
 
 namespace Xlent.Match.ClientUtilities.Exceptions
 {
-    public class BadRequestException : BaseClass
+    public class BadRequestException : MatchException
     {
         public BadRequestException(string message)
             : base(FailureResponse.ErrorTypeEnum.BadRequest, message)
