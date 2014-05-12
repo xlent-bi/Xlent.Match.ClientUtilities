@@ -9,7 +9,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public BaseClass(string connectionStringName)
         {
             ConnectionString = null;
-#if false
+#if true
             ConnectionString = CloudConfigurationManager.GetSetting(connectionStringName);
 #else
             var settings = ConfigurationManager.ConnectionStrings[connectionStringName];
