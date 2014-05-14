@@ -21,7 +21,9 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <see cref="Event.Moved"/>, <see cref="Event.Deleted"/>.
         /// </summary>
         [DataMember]
-        public string EventType { get; private set; }
+        public string EventTypeAsString { get; private set; }
+        
+        public EventTypeEnum EventType { get { return TranslateEventType(EventTypeAsString); } }
 
         /// <summary>
         /// The identity of the object that has changed.
@@ -80,7 +82,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// and <see cref="Event.Deleted"/>.</param>
         public Event(EventTypeEnum eventType)
         {
-            EventType = TranslateEventType(eventType);
+            EventTypeAsString = TranslateEventType(eventType);
         }
 
         /// <summary>

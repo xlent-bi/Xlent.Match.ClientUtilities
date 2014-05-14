@@ -21,6 +21,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// and <see cref="Response.Failure"/>.
         [DataMember]
         public string ResponseTypeAsString { get; private set; }
+
         public ResponseTypeEnum ResponseType { get { return TranslateResponseType(ResponseTypeAsString); } }
 
         /// <summary>
@@ -89,7 +90,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         {
 
             ResponseTypeAsString = TranslateResponseType(responseType);
-            RequestTypeAsString = request.RequestType;
+            RequestTypeAsString = request.RequestTypeAsString;
             ProcessId = request.ProcessId;
             Key = request.Key;
         }

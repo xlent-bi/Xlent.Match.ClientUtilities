@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using Xlent.Match.ClientUtilities.MatchObjectModel;
 
 namespace Xlent.Match.ClientUtilities.Messages
 {
@@ -13,7 +13,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// The constructor for this class.
         /// </summary>
         /// <param name="request">The associated request.</param>
-        /// <remarks><see cref="Response.MatchObject"/> is the only property that is not set by this constructor.</remarks>
+        /// <remarks><see cref="MatchObject"/> is the only property that is not set by this constructor.</remarks>
         public SuccessResponse(Request request)
             : base(request, Response.ResponseTypeEnum.Success)
         {
