@@ -21,7 +21,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <see cref="Event.Moved"/>, <see cref="Event.Deleted"/>.
         /// </summary>
         [DataMember]
-        public string EventType { get; set; }
+        public string EventType { get; private set; }
 
         /// <summary>
         /// The identity of the object that has changed.
