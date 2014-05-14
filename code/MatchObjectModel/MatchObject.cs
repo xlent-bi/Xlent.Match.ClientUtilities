@@ -19,8 +19,6 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         [DataMember]
         public Data Data { get; set; }
 
-        public static DataContractSerializer Serializer = new DataContractSerializer(typeof(MatchObject));
-
         public MatchObject(string clientName, string entityName, string keyValue, string matchId = null)
             : this(new Key(clientName, entityName, keyValue, matchId))
         {

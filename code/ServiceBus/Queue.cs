@@ -41,11 +41,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public void Enqueue<T>(T message, IDictionary<string, object> properties = null)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
+            var m = new BrokeredMessage(message);
             if (properties != null)
             {
                 foreach (var property in properties)
@@ -63,10 +59,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 message = Client.Receive();
             } while (message == null);
 
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            return message.GetBody<T>(dataContractSerializer);
+            return message.GetBody<T>();
         }
 
         public long GetLength()
