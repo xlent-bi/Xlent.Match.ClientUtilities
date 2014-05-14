@@ -19,18 +19,18 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <summary>
         /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
         /// and <see cref="Response.Failure"/>.
-        [DataMember(Name = "ResponseType")]
-        public string ResponseType_UseEnumVersionInstead { get; set; }
-        public ResponseTypeEnum ResponseType { get { return TranslateResponseType(ResponseType_UseEnumVersionInstead); } }
+        [DataMember]
+        public string ResponseTypeAsString { get; private set; }
+        public ResponseTypeEnum ResponseType { get { return TranslateResponseType(ResponseTypeAsString); } }
 
         /// <summary>
         /// The type of the request.
         /// Mandatory, one of <see cref="Request.Create"/>,  <see cref="Request.Update"/>
         /// and  <see cref="Request.Get"/>.
         /// </summary>
-        [DataMember(Name = "RequestType")]
-        public string RequestType_UseEnumVersionInstead { get; set; }
-        public Request.RequestTypeEnum RequestType { get { return Request.TranslateRequestType(RequestType_UseEnumVersionInstead); } }
+        [DataMember]
+        public string RequestTypeAsString { get; private set; }
+        public Request.RequestTypeEnum RequestType { get { return Request.TranslateRequestType(RequestTypeAsString); } }
 
         /// <summary>
         /// The <see cref="Request.ProcessId"/>.
@@ -88,8 +88,8 @@ namespace Xlent.Match.ClientUtilities.Messages
         protected Response(Request request, ResponseTypeEnum responseType)
         {
 
-            ResponseType_UseEnumVersionInstead = TranslateResponseType(responseType);
-            RequestType_UseEnumVersionInstead = request.RequestType;
+            ResponseTypeAsString = TranslateResponseType(responseType);
+            RequestTypeAsString = request.RequestType;
             ProcessId = request.ProcessId;
             Key = request.Key;
         }

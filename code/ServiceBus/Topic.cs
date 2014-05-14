@@ -39,11 +39,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public void Send<T>(T message, IDictionary<string,object> properties)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
+            var m = new BrokeredMessage(message);
             if (properties != null)
             {
                 foreach (var property in properties)

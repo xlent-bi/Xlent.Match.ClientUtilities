@@ -121,7 +121,7 @@ namespace Xlent.Match.ClientUtilities
 
         private static void SendResponse<T>(T response) where T : Response
         {
-            ResponseTopic.Send(response, new Dictionary<string, object> { { "ResponseType", response.ResponseType } });
+            ResponseTopic.Send(response, new Dictionary<string, object> { { "ResponseType", response.ResponseTypeAsString } });
         }
     }
 }

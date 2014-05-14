@@ -27,10 +27,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 message = GetOneMessageOrNull();
             } while (message == null);
 
-            var dataContractSerializer =
-                    new DataContractSerializer(typeof(T));
-
-            return message.GetBody<T>(dataContractSerializer);
+            return message.GetBody<T>();
         }
     }
 }
