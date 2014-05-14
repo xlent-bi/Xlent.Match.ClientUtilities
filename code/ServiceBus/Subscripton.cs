@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using System.ServiceModel.Channels;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -14,11 +15,16 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public SubscriptionClient Client { get; private set; }
 
+        public BrokeredMessage GetOneMessageOrNull()
+        {
+            return Client.Receive();
+        }
+
         public T GetOneMessage<T>(out BrokeredMessage message) where T : class
         {
             do
             {
-                message = Client.Receive();
+                message = GetOneMessageOrNull();
             } while (message == null);
 
             var dataContractSerializer =
