@@ -21,7 +21,7 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         public enum ErrorTypeEnum
         {
-            NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError
+            NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError, AdapterDidNotHandleException
         };
 
         /// <summary>
