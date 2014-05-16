@@ -105,10 +105,14 @@ namespace Xlent.Match.ClientUtilities
 
                 SendResponse(failureResponse);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                message.Abandon();
-                throw;
+                var failureResponse = new FailureResponse(request, FailureResponse.ErrorTypeEnum.AdapterDidNotHandleException)
+                {
+                    Message = exception.ToString()
+                };
+
+                SendResponse(failureResponse);
             }
             message.Complete();
 
