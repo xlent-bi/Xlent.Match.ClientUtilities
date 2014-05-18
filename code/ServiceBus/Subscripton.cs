@@ -7,11 +7,15 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 {
     public class Subscription
     {
+        private readonly Topic _topic;
         public Subscription(Topic topic, string name, Filter filter)
         {
+            _topic = topic;
             topic.GetOrCreateSubscription(name, filter);
             Client = SubscriptionClient.CreateFromConnectionString(topic.ConnectionString, topic.Client.Path, name);
         }
+
+        public Topic Topic { get { return _topic; } }
 
         public SubscriptionClient Client { get; private set; }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.ServiceBus.Messaging;
+﻿using System.Threading.Tasks;
+using Microsoft.ServiceBus.Messaging;
 using System;
 using System.Collections.Generic;
 
@@ -68,6 +69,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Delete()
         {
             NamespaceManager.DeleteQueue(Client.Path);
+        }
+
+        public async Task DeleteAsync()
+        {
+            await NamespaceManager.DeleteQueueAsync(Client.Path);
         }
     }
 }
