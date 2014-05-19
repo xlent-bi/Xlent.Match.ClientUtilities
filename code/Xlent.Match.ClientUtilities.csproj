@@ -121,6 +121,9 @@
     <Compile Include="Messages\Request.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceBus\BaseClass.cs" />
+    <Compile Include="ServiceBus\IQueueReceiver.cs" />
+    <Compile Include="ServiceBus\IQueueAdministrator.cs" />
+    <Compile Include="ServiceBus\IQueueSender.cs" />
     <Compile Include="ServiceBus\Subscripton.cs" />
     <Compile Include="ServiceBus\Topic.cs" />
     <Compile Include="ServiceBus\Queue.cs" />

@@ -6,7 +6,7 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Queue : BaseClass
+    public class Queue : BaseClass, IQueueSender, IQueueReceiver, IQueueAdministrator
     {
         public Queue(string connectionStringName, string name)
             : base(connectionStringName)
@@ -46,20 +46,32 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 new DataContractSerializer(typeof(T));
 
             var m = new BrokeredMessage(message, dataContractSerializer);
-            Client.Send(m);
+            Send(m);
         }
 
+       
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
-            do
-            {
-                message = Client.Receive();
-            } while (message == null);
+            message = BlockingReceive();
 
             var dataContractSerializer =
                 new DataContractSerializer(typeof(T));
 
             return message.GetBody<T>(dataContractSerializer);
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
+        }
+
+        public BrokeredMessage BlockingReceive()
+        {
+            while (true)
+            {
+                var message = Client.Receive(new TimeSpan(0, 60, 0));
+                if (message != null) return message;
+            }
         }
 
         public long GetLength()

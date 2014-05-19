@@ -7,7 +7,7 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Topic : BaseClass
+    public class Topic : BaseClass, IQueueSender
     {
         public Topic(string connectionStringName, string name)
             :base(connectionStringName)
@@ -87,6 +87,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Delete()
         {
             NamespaceManager.DeleteTopic(Client.Path);
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
         }
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Subscription
+    public class Subscription : IQueueReceiver
     {
         public Subscription(Topic topic, string name, Filter filter)
         {
@@ -25,6 +25,15 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     new DataContractSerializer(typeof(T));
 
             return message.GetBody<T>(dataContractSerializer);
+        }
+
+        public BrokeredMessage BlockingReceive()
+        {
+            while (true)
+            {
+                var message = Client.Receive(new TimeSpan(0, 60, 0));
+                if (message != null) return message;
+            }
         }
     }
 }
