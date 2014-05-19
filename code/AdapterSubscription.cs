@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using Microsoft.ServiceBus.Messaging;
+using Xlent.Match.ClientUtilities.Logging;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
 
@@ -81,11 +83,15 @@ namespace Xlent.Match.ClientUtilities
         {
             try
             {
+                Log.Information("Processing {0} message", request.RequestTypeAsString );
+
                 var successResponse = requestDelegate(request);
                 SendResponse(successResponse);
             }
             catch (Exceptions.MovedException exception)
             {
+                Log.Information(exception.Message);
+
                 var oldId = request.KeyValue;
                 var failureResponse = new FailureResponse(request, exception.ErrorType)
                 {
@@ -98,6 +104,8 @@ namespace Xlent.Match.ClientUtilities
             }
             catch (Exceptions.MatchException exception)
             {
+                Log.Error(exception, "An error has occured");
+
                 var failureResponse = new FailureResponse(request, exception.ErrorType)
                 {
                     Message = exception.Message
@@ -107,6 +115,8 @@ namespace Xlent.Match.ClientUtilities
             }
             catch (Exception exception)
             {
+                Log.Critical(exception, "An error not handled by the adapter has occured");
+
                 var failureResponse = new FailureResponse(request, FailureResponse.ErrorTypeEnum.AdapterDidNotHandleException)
                 {
                     Message = exception.ToString()
