@@ -84,13 +84,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             return data.FindPropertyValue(okIfNotExists, path);
         }
 
-        /// <summary>
-        /// Find a possibly deeply nested property.
-        /// </summary>
-        /// <param name="path">The path to the property expressed as NestedPropertyName.Name, e.g. "Mother.Address.ZipCode".</param>
-        /// <param name="okIfNotExists">True if it is OK if <paramref name="path"/> was not found.</param>
-        /// <returns>The found value, or null if <paramref name="okIfNotExists"/> is true and the <paramref name="path"/> property was not found.</returns>
-        public void SetPropertyValue(string path, string value)
+       public void SetPropertyValue(string path, string value)
         {
             var pathArray = path.Split('.');
             SetPropertyValue(value, new Queue<string>(pathArray));

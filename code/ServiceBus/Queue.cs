@@ -5,13 +5,13 @@ using System.Collections.Generic;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Queue : BaseClass
+    public class Queue : BaseClass, IQueueSender, IQueueReceiver, IQueueAdministrator
     {
+        public string Name { get; private set; }
         public Queue(string connectionStringName, string name)
             : base(connectionStringName)
         {
-
-
+            Name = name;
             // Create a new Queue with custom settings
             if (!NamespaceManager.QueueExists(name))
             {
@@ -38,7 +38,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public QueueClient Client { get; private set; }
 
-        public void Enqueue<T>(T message, IDictionary<string, object> properties = null)
+        public void Send<T>(T message, IDictionary<string, object> properties = null)
         {
             var m = new BrokeredMessage(message);
             if (properties != null)
@@ -48,23 +48,47 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     m.Properties.Add(property);
                 }
             }
-            Client.Send(m);
-        }
-
-        public void Resend(BrokeredMessage message)
-        {
-            var newMessage = message.Clone();
-            Client.Send(newMessage);
+            Send(m);
         }
 
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
-            do
-            {
-                message = Client.Receive();
-            } while (message == null);
+            message = BlockingReceive();
 
             return message.GetBody<T>();
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+            try
+            {
+                message.Complete();
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
+        }
+
+        public BrokeredMessage NonBlockingReceive()
+        {
+            return Client.Receive();
+        }
+
+        public BrokeredMessage BlockingReceive()
+        {
+            while (true)
+            {
+                var message = Client.Receive(new TimeSpan(0, 60, 0));
+                if (message != null) return message;
+            }
         }
 
         public long GetLength()
@@ -80,6 +104,12 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task DeleteAsync()
         {
             await NamespaceManager.DeleteQueueAsync(Client.Path);
+    }
+
+
+        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessage(action, onMessageOptions);
         }
     }
 }

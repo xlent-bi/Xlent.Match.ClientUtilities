@@ -8,7 +8,7 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Topic : BaseClass
+    public class Topic : BaseClass, IQueueSender, IQueueAdministrator
     {
         public Topic(string connectionStringName, string name)
             :base(connectionStringName)
@@ -41,7 +41,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Resend(BrokeredMessage message)
         {
             var newMessage = message.Clone();
-            Client.Send(newMessage);
+            Send(newMessage);
         }
 
         public void Send<T>(T message, IDictionary<string,object> properties)
@@ -54,7 +54,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     m.Properties.Add(property);
                 }
             }
-            Client.Send(m);
+            Send(m);
         }
 
         public void GetOrCreateSubscription(string name, Filter filter)
@@ -95,6 +95,25 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task DeleteAsync()
         {
             await NamespaceManager.DeleteTopicAsync(Client.Path);
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+            try
+            {
+                message.Complete();
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
         }
     }
 }
