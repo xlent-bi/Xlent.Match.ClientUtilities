@@ -51,6 +51,12 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.Send(m);
         }
 
+        public void Resend(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+        }
+
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
             do
