@@ -17,8 +17,9 @@ namespace Xlent.Match.ClientUtilities.Messages
         public enum ResponseTypeEnum { Success, Failure };
 
         /// <summary>
-        /// The type of the response. Mandatory, one of <see cref="Event.Success"/>,
-        /// and <see cref="Event.Failure"/>.
+        /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
+        /// and <see cref="Response.Failure"/>.
+        /// </summary>
         [DataMember]
         public string ResponseType { get; set; }
 
