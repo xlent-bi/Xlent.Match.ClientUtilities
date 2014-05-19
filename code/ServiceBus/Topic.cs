@@ -13,6 +13,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public Topic(string connectionStringName, string name)
             :base(connectionStringName)
         {
+            Name = name;
             if (!NamespaceManager.TopicExists(name))
             {
                 try
@@ -20,7 +21,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     // Configure Topic Settings
                     var td = new TopicDescription(name);
                     //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = new TimeSpan(0, 1, 0);
+                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
                     NamespaceManager.CreateTopic(td);
                 }
                 catch (Exception)
@@ -115,5 +116,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             {
             }
         }
+
+        public string Name { get; private set; }
     }
 }

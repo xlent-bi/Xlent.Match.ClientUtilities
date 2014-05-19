@@ -32,14 +32,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public BrokeredMessage NonBlockingReceive()
         {
-            return Client.Receive();
+            return Client.Receive(TimeSpan.FromSeconds(1));
         }
 
         public BrokeredMessage BlockingReceive()
         {
             while (true)
             {
-                var message = Client.Receive(new TimeSpan(0, 60, 0));
+                var message = Client.Receive(TimeSpan.FromMinutes(60));
                 if (message != null) return message;
             }
         }

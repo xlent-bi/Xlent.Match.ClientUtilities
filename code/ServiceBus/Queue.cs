@@ -20,7 +20,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     // Configure Queue Settings
                     var qd = new QueueDescription(name);
                     //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = new TimeSpan(0, 1, 0);
+                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
                     NamespaceManager.CreateQueue(qd);
                 }
                 catch (Exception)
@@ -79,14 +79,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public BrokeredMessage NonBlockingReceive()
         {
-            return Client.Receive();
+            return Client.Receive(TimeSpan.FromSeconds(1));
         }
 
         public BrokeredMessage BlockingReceive()
         {
             while (true)
             {
-                var message = Client.Receive(new TimeSpan(0, 60, 0));
+                var message = Client.Receive(TimeSpan.FromMinutes(60));
                 if (message != null) return message;
             }
         }
