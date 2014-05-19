@@ -19,6 +19,11 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         [DataMember]
         public Dictionary<string, Data> NestedProperties { get; set; }
 
+        public Data()
+        {
+            Properties = new Dictionary<string, string>();
+        }
+
         /// <summary>
         /// Get a value from the <see cref="Properties"/> dictionary
         /// </summary>

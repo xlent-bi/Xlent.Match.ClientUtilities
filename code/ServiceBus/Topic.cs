@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Topic : BaseClass, IQueueSender
+    public class Topic : BaseClass
     {
         public Topic(string connectionStringName, string name)
             :base(connectionStringName)
@@ -37,13 +38,15 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public TopicClient Client { get; private set; }
 
+        public void Resend(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+        }
+
         public void Send<T>(T message, IDictionary<string,object> properties)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
+            var m = new BrokeredMessage(message);
             if (properties != null)
             {
                 foreach (var property in properties)
@@ -89,9 +92,9 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             NamespaceManager.DeleteTopic(Client.Path);
         }
 
-        public void Send(BrokeredMessage message)
+        public async Task DeleteAsync()
         {
-            Client.Send(message);
+            await NamespaceManager.DeleteTopicAsync(Client.Path);
         }
     }
 }

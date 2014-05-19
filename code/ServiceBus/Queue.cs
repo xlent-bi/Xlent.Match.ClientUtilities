@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using Microsoft.ServiceBus;
+﻿using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
+using System;
+using System.Collections.Generic;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
@@ -34,30 +33,35 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 }
             }
 
-            this.Client = QueueClient.CreateFromConnectionString(ConnectionString, name);
+            Client = QueueClient.CreateFromConnectionString(ConnectionString, name);
         }
 
         public QueueClient Client { get; private set; }
 
-        public void Enqueue<T>(T message)
+        public void Enqueue<T>(T message, IDictionary<string, object> properties = null)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
+            var m = new BrokeredMessage(message);
+            if (properties != null)
+            {
+                foreach (var property in properties)
+                {
+                    m.Properties.Add(property);
+                }
+            }
             Send(m);
         }
 
-       
+        public void Resend(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+        }
+
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
             message = BlockingReceive();
 
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            return message.GetBody<T>(dataContractSerializer);
+            return message.GetBody<T>();
         }
 
         public void Send(BrokeredMessage message)
@@ -83,5 +87,10 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             NamespaceManager.DeleteQueue(Client.Path);
         }
+
+        public async Task DeleteAsync()
+        {
+            await NamespaceManager.DeleteQueueAsync(Client.Path);
+    }
     }
 }

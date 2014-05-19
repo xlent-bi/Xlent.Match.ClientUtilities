@@ -21,7 +21,7 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         public enum ErrorTypeEnum
         {
-            NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError
+            NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError, AdapterDidNotHandleException
         };
 
         /// <summary>
@@ -29,7 +29,9 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// Mandatory.
         /// </summary>
         [DataMember]
-        public string ErrorType { get; set; }
+        public string ErrorTypeAsString { get; private set; }
+
+        public ErrorTypeEnum ErrorType { get { return TranslateErrorType(ErrorTypeAsString); } }
 
         /// <summary>
         /// Only used for error type <see cref="Moved"/>.
@@ -49,9 +51,9 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <param name="request">The request that this is a response to.</param>
         /// <param name="errorType">The error type.</param>
         public FailureResponse(Request request, ErrorTypeEnum errorType)
-            : base(request, Response.ResponseTypeEnum.Failure)
+            : base(request, ResponseTypeEnum.Failure)
         {
-            ErrorType = TranslateErrorType(errorType);
+            ErrorTypeAsString = TranslateErrorType(errorType);
         }
 
         /// <summary>

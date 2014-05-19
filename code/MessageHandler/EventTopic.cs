@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using Microsoft.ServiceBus;
-using Microsoft.ServiceBus.Messaging;
-using System;
-using Xlent.Match.ClientUtilities;
+﻿using System;
+using System.Collections.Generic;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
 
@@ -40,7 +37,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         public static void Send(Event theEvent)
         {
-            Topic.Send(theEvent, new Dictionary<string, object> { { "Type", theEvent.EventType } });
+            Topic.Send(theEvent, new Dictionary<string, object> { { "Type", theEvent.EventTypeAsString } });
         }
 
         public void SendUpdated(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null, string externalReference = null)

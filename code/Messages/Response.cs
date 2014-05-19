@@ -19,9 +19,10 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <summary>
         /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
         /// and <see cref="Response.Failure"/>.
-        /// </summary>
         [DataMember]
-        public string ResponseType { get; set; }
+        public string ResponseTypeAsString { get; private set; }
+
+        public ResponseTypeEnum ResponseType { get { return TranslateResponseType(ResponseTypeAsString); } }
 
         /// <summary>
         /// The type of the request.
@@ -29,7 +30,8 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// and  <see cref="Request.Get"/>.
         /// </summary>
         [DataMember]
-        public string RequestType { get; set; }
+        public string RequestTypeAsString { get; private set; }
+        public Request.RequestTypeEnum RequestType { get { return Request.TranslateRequestType(RequestTypeAsString); } }
 
         /// <summary>
         /// The <see cref="Request.ProcessId"/>.
@@ -87,8 +89,8 @@ namespace Xlent.Match.ClientUtilities.Messages
         protected Response(Request request, ResponseTypeEnum responseType)
         {
 
-            ResponseType = TranslateResponseType(responseType);
-            RequestType = request.RequestType;
+            ResponseTypeAsString = TranslateResponseType(responseType);
+            RequestTypeAsString = request.RequestTypeAsString;
             ProcessId = request.ProcessId;
             Key = request.Key;
         }

@@ -1,30 +1,37 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using System.ServiceModel.Channels;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
     public class Subscription : IQueueReceiver
     {
+        private readonly Topic _topic;
         public Subscription(Topic topic, string name, Filter filter)
         {
+            _topic = topic;
             topic.GetOrCreateSubscription(name, filter);
             Client = SubscriptionClient.CreateFromConnectionString(topic.ConnectionString, topic.Client.Path, name);
         }
 
+        public Topic Topic { get { return _topic; } }
+
         public SubscriptionClient Client { get; private set; }
+
+        public BrokeredMessage GetOneMessageOrNull()
+        {
+            return Client.Receive();
+        }
 
         public T GetOneMessage<T>(out BrokeredMessage message) where T : class
         {
             do
             {
-                message = Client.Receive();
+                message = GetOneMessageOrNull();
             } while (message == null);
 
-            var dataContractSerializer =
-                    new DataContractSerializer(typeof(T));
-
-            return message.GetBody<T>(dataContractSerializer);
+            return message.GetBody<T>();
         }
 
         public BrokeredMessage BlockingReceive()

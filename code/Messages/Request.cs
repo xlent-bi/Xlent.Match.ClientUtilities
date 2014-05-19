@@ -15,14 +15,16 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string Get = "Get";
 
         public enum RequestTypeEnum { Create, Update, Get };
-        
+
         /// <summary>
         /// The type of the request.
         /// Mandatory, one of <see cref="Request.Create"/>,  <see cref="Request.Update"/>
         /// and  <see cref="Request.Get"/>.
         /// </summary>
         [DataMember]
-        public string RequestType { get; set; }
+        public string RequestTypeAsString { get; private set; }
+
+        public RequestTypeEnum RequestType { get { return TranslateRequestType(RequestTypeAsString); } }
 
         /// <summary>
         /// The internal Match id for the process that this message is part of.
@@ -72,7 +74,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         
         public Request(RequestTypeEnum requestType)
         {
-            RequestType = TranslateRequestType(requestType);
+            RequestTypeAsString = TranslateRequestType(requestType);
         }
 
         /// <summary>
