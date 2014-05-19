@@ -7,11 +7,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 {
     public class Queue : BaseClass, IQueueSender, IQueueReceiver, IQueueAdministrator
     {
+        public string Name { get; private set; }
         public Queue(string connectionStringName, string name)
             : base(connectionStringName)
         {
-
-
+            Name = name;
             // Create a new Queue with custom settings
             if (!NamespaceManager.QueueExists(name))
             {
@@ -38,7 +38,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public QueueClient Client { get; private set; }
 
-        public void Enqueue<T>(T message, IDictionary<string, object> properties = null)
+        public void Send<T>(T message, IDictionary<string, object> properties = null)
         {
             var m = new BrokeredMessage(message);
             if (properties != null)
@@ -51,12 +51,6 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Send(m);
         }
 
-        public void Resend(BrokeredMessage message)
-        {
-            var newMessage = message.Clone();
-            Client.Send(newMessage);
-        }
-
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
             message = BlockingReceive();
@@ -67,6 +61,25 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Send(BrokeredMessage message)
         {
             Client.Send(message);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+            try
+            {
+                message.Complete();
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
+        }
+
+        public BrokeredMessage NonBlockingReceive()
+        {
+            return Client.Receive();
         }
 
         public BrokeredMessage BlockingReceive()
@@ -92,5 +105,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             await NamespaceManager.DeleteQueueAsync(Client.Path);
     }
+
+
+        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessage(action, onMessageOptions);
+        }
     }
 }

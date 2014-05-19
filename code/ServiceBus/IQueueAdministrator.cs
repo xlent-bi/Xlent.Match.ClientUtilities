@@ -1,8 +1,11 @@
-﻿namespace Xlent.Match.ClientUtilities.ServiceBus
+﻿using System.Threading.Tasks;
+
+namespace Xlent.Match.ClientUtilities.ServiceBus
 {
     public interface IQueueAdministrator
     {
         long GetLength();
         void Delete();
+        Task DeleteAsync();
     }
 }
