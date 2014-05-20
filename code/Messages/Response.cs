@@ -130,5 +130,10 @@ namespace Xlent.Match.ClientUtilities.Messages
                     throw new ArgumentException(String.Format("Unknown response type: \"{0}\".", responseType));
             }
         }
+
+        public override string ToString()
+        {
+            return String.Format("{0} response for request {1} for key {2}.", ResponseTypeAsString, RequestTypeAsString, Key);
+        }
     }
 }

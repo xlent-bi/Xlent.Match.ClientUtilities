@@ -121,5 +121,10 @@ namespace Xlent.Match.ClientUtilities.Messages
         {
                 return string.Join(".", clientName, entityName);
         }
+
+        public override string ToString()
+        {
+            return String.Format("Request of type {0} for key {1}.", RequestTypeAsString, Key);
+        }
     }
 }
