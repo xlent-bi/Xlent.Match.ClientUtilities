@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
+using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -47,6 +48,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
         {
             Client.OnMessage(action, onMessageOptions);
+        }
+
+        public long GetLength()
+        {
+            return _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name).MessageCount;
         }
     }
 }
