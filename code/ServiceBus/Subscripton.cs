@@ -50,6 +50,20 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessage(action, onMessageOptions);
         }
 
+        public void Activate()
+        {
+            var subscriptionDescription = _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name);
+            subscriptionDescription.Status = EntityStatus.Active;
+            _topic.NamespaceManager.UpdateSubscription(subscriptionDescription);
+        }
+
+        public void Disable()
+        {
+            var subscriptionDescription = _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name);
+            subscriptionDescription.Status = EntityStatus.ReceiveDisabled;
+            _topic.NamespaceManager.UpdateSubscription(subscriptionDescription);
+        }
+
         public long GetLength()
         {
             return _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name).MessageCount;

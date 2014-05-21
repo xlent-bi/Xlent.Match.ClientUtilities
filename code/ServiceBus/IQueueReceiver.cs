@@ -10,5 +10,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         BrokeredMessage NonBlockingReceive();
         BrokeredMessage BlockingReceive();
         void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions);
+        void Disable();
+        void Activate();
     }
 }
