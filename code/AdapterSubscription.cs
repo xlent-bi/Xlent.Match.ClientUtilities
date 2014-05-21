@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using Microsoft.ServiceBus.Messaging;
+using Xlent.Match.ClientUtilities.Exceptions;
 using Xlent.Match.ClientUtilities.Logging;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
@@ -83,7 +84,7 @@ namespace Xlent.Match.ClientUtilities
         {
             try
             {
-                Log.Information("Processing {0} message", request.RequestTypeAsString );
+                Log.Information("Processing {0} message", request.RequestTypeAsString);
 
                 var successResponse = requestDelegate(request);
                 SendResponse(successResponse);
@@ -98,6 +99,17 @@ namespace Xlent.Match.ClientUtilities
                     Value = oldId,
                     Message = exception.Message,
                     Key = {Value = exception.NewKeyValue}
+                };
+
+                SendResponse(failureResponse);
+            }
+            catch (InternalServerErrorException exception)
+            {
+                Log.Critical(exception, "An internal server error has occured.");
+
+                var failureResponse = new FailureResponse(request, FailureResponse.ErrorTypeEnum.InternalServerError)
+                {
+                    Message = exception.ToString()
                 };
 
                 SendResponse(failureResponse);
