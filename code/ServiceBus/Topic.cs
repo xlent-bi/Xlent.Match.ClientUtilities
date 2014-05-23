@@ -3,15 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Topic : BaseClass
+    public class Topic : BaseClass, IQueueSender, IQueueAdministrator
     {
         public Topic(string connectionStringName, string name)
             :base(connectionStringName)
         {
+            Name = name;
             if (!NamespaceManager.TopicExists(name))
             {
                 try
@@ -19,7 +21,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     // Configure Topic Settings
                     var td = new TopicDescription(name);
                     //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = new TimeSpan(0, 1, 0);
+                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
                     NamespaceManager.CreateTopic(td);
                 }
                 catch (Exception)
@@ -37,13 +39,15 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public TopicClient Client { get; private set; }
 
+        public void Resend(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Send(newMessage);
+        }
+
         public void Send<T>(T message, IDictionary<string,object> properties)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
+            var m = new BrokeredMessage(message);
             if (properties != null)
             {
                 foreach (var property in properties)
@@ -51,7 +55,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     m.Properties.Add(property);
                 }
             }
-            Client.Send(m);
+            Send(m);
         }
 
         public void GetOrCreateSubscription(string name, Filter filter)
@@ -88,5 +92,31 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             NamespaceManager.DeleteTopic(Client.Path);
         }
+
+        public async Task DeleteAsync()
+        {
+            await NamespaceManager.DeleteTopicAsync(Client.Path);
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+            try
+            {
+                message.Complete();
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
+        }
+
+        public string Name { get; private set; }
     }
 }

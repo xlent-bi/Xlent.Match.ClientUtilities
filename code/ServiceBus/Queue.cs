@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using Microsoft.ServiceBus;
+﻿using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
+using System;
+using System.Collections.Generic;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
-    public class Queue : BaseClass
+    public class Queue : BaseClass, IQueueSender, IQueueReceiver, IQueueAdministrator
     {
+        public string Name { get; private set; }
         public Queue(string connectionStringName, string name)
             : base(connectionStringName)
         {
-
-
+            Name = name;
             // Create a new Queue with custom settings
             if (!NamespaceManager.QueueExists(name))
             {
@@ -21,7 +20,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     // Configure Queue Settings
                     var qd = new QueueDescription(name);
                     //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = new TimeSpan(0, 1, 0);
+                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
                     NamespaceManager.CreateQueue(qd);
                 }
                 catch (Exception)
@@ -34,32 +33,62 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 }
             }
 
-            this.Client = QueueClient.CreateFromConnectionString(ConnectionString, name);
+            Client = QueueClient.CreateFromConnectionString(ConnectionString, name);
         }
 
         public QueueClient Client { get; private set; }
 
-        public void Enqueue<T>(T message)
+        public void Send<T>(T message, IDictionary<string, object> properties = null)
         {
-
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
-
-            var m = new BrokeredMessage(message, dataContractSerializer);
-            Client.Send(m);
+            var m = new BrokeredMessage(message);
+            if (properties != null)
+            {
+                foreach (var property in properties)
+                {
+                    m.Properties.Add(property);
+                }
+            }
+            Send(m);
         }
 
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
-            do
+            message = BlockingReceive();
+
+            return message.GetBody<T>();
+        }
+
+        public void Send(BrokeredMessage message)
+        {
+            Client.Send(message);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            var newMessage = message.Clone();
+            Client.Send(newMessage);
+            try
             {
-                message = Client.Receive();
-            } while (message == null);
+                message.Complete();
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
+        }
 
-            var dataContractSerializer =
-                new DataContractSerializer(typeof(T));
+        public BrokeredMessage NonBlockingReceive()
+        {
+            return Client.Receive(TimeSpan.FromSeconds(1));
+        }
 
-            return message.GetBody<T>(dataContractSerializer);
+        public BrokeredMessage BlockingReceive()
+        {
+            while (true)
+            {
+                var message = Client.Receive(TimeSpan.FromMinutes(60));
+                if (message != null) return message;
+            }
         }
 
         public long GetLength()
@@ -70,6 +99,31 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Delete()
         {
             NamespaceManager.DeleteQueue(Client.Path);
+        }
+
+        public async Task DeleteAsync()
+        {
+            await NamespaceManager.DeleteQueueAsync(Client.Path);
+    }
+
+
+        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessage(action, onMessageOptions);
+        }
+
+        public void Activate()
+        {
+            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            queueDescription.Status = EntityStatus.Active;
+            NamespaceManager.UpdateQueue(queueDescription);
+        }
+
+        public void Disable()
+        {
+            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            queueDescription.Status = EntityStatus.ReceiveDisabled;
+            NamespaceManager.UpdateQueue(queueDescription);
         }
     }
 }
