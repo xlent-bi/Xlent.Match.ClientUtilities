@@ -111,5 +111,19 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             Client.OnMessage(action, onMessageOptions);
         }
+
+        public void Activate()
+        {
+            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            queueDescription.Status = EntityStatus.Active;
+            NamespaceManager.UpdateQueue(queueDescription);
+        }
+
+        public void Disable()
+        {
+            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            queueDescription.Status = EntityStatus.ReceiveDisabled;
+            NamespaceManager.UpdateQueue(queueDescription);
+        }
     }
 }
