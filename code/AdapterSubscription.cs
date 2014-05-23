@@ -78,6 +78,7 @@ namespace Xlent.Match.ClientUtilities
             }, options);
 
             stopEvent.WaitOne();
+            Client.Close();
         }
 
         public static SuccessResponse ProcessRequest(GetRequestDelegate getRequestDelegate,
@@ -186,11 +187,6 @@ namespace Xlent.Match.ClientUtilities
             }
             message.Complete();
 
-        }
-
-        public void Close()
-        {
-            Client.Close();
         }
 
         private static void SendResponse<T>(T response) where T : Response
