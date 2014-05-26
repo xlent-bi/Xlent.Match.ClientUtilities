@@ -23,6 +23,8 @@ namespace Console.SampleAdapter
 //
 //                return data;
 
+                System.Console.WriteLine("Get request for key = {0} received.", key);
+
                 throw new NotImplementedException("Get not implemented");
             }
             catch (Exception e)
@@ -38,6 +40,7 @@ namespace Console.SampleAdapter
         {
             try
             {
+                throw new NotImplementedException("Update not implemented");
             }
             catch (Exception e)
             {
@@ -52,7 +55,7 @@ namespace Console.SampleAdapter
         {
             try
             {
-                return null;
+                throw new NotImplementedException("Create not implemented");
             }
             catch (Exception e)
             {
