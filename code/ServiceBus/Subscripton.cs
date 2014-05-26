@@ -28,7 +28,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 message = NonBlockingReceive();
             } while (message == null);
 
-            return message.GetBody<T>();
+            return message.GetBody<T>(new DataContractSerializer(typeof(T)));
         }
 
         public BrokeredMessage NonBlockingReceive()
