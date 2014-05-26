@@ -25,7 +25,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             do
             {
-                message = NonBlockingReceive();
+                message = BlockingReceive();
             } while (message == null);
 
             return message.GetBody<T>(new DataContractSerializer(typeof(T)));
