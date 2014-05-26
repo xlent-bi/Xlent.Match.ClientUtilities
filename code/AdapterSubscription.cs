@@ -82,6 +82,20 @@ namespace Xlent.Match.ClientUtilities
             Client.Close();
         }
 
+        /// <summary>
+        /// For test purposes!
+        /// </summary>
+        public void ProcessOneMessage(GetRequestDelegate getRequestDelegate,
+            UpdateRequestDelegate updateRequestDelegate,
+            CreateRequestDelegate createRequestDelegate)
+        {
+            BrokeredMessage message;
+            var request = GetOneMessage<Request>(out message);
+            if (request == null) return;
+
+            SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+        }
+
         public static SuccessResponse ProcessRequest(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate, Request request)
