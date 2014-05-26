@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading;
 using Microsoft.ServiceBus.Messaging;
 using Xlent.Match.ClientUtilities.Exceptions;
@@ -63,7 +64,7 @@ namespace Xlent.Match.ClientUtilities
 
             Client.OnMessage(message =>
             {
-                var request = message.GetBody<Request>();
+                var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
 
                 SafeProcessRequest(requestDelegate, request, message);
             }, options);
