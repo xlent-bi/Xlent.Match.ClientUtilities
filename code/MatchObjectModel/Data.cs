@@ -32,13 +32,9 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         /// <returns>The value found, or null if <paramref name="okIfNotExists"/> is true and <paramref name="key"/> was not found.</returns>
         public string GetPropertyValue(string key, bool okIfNotExists)
         {
-            if (!Properties.ContainsKey(key))
-            {
-                if (okIfNotExists) return null;
-                throw new ArgumentOutOfRangeException("key");
-            }
-
-            return Properties[key];
+            if ((Properties != null) && Properties.ContainsKey(key)) return Properties[key];
+            if (okIfNotExists) return null;
+            throw new ArgumentOutOfRangeException("key");
         }
 
         /// <summary>

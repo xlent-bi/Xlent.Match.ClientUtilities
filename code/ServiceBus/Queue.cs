@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public void Send<T>(T message, IDictionary<string, object> properties = null)
         {
-            var m = new BrokeredMessage(message);
+            var m = new BrokeredMessage(message, new DataContractSerializer(typeof(T)));
             if (properties != null)
             {
                 foreach (var property in properties)
@@ -55,7 +56,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             message = BlockingReceive();
 
-            return message.GetBody<T>();
+            return message.GetBody<T>(new DataContractSerializer(typeof(T)));
         }
 
         public void Send(BrokeredMessage message)

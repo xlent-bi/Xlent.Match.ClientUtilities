@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading;
 using Microsoft.ServiceBus.Messaging;
 using Xlent.Match.ClientUtilities.Exceptions;
 using Xlent.Match.ClientUtilities.Logging;
+using Xlent.Match.ClientUtilities.MatchObjectModel;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
 
@@ -55,38 +57,100 @@ namespace Xlent.Match.ClientUtilities
             return new SqlFilter(string.Format("ClientName = '{0}' AND EntityName = '{1}'", clientName, entityName));
         }
 
-        public delegate SuccessResponse RequestDelegate(Request request);
+        public delegate Data GetRequestDelegate(Key key);
 
-        public void ProcessRequests(RequestDelegate requestDelegate, ManualResetEvent stopEvent, int maxConcurrentCalls = 1 )
+        public delegate void UpdateRequestDelegate(Key key, Data data);
+
+        public delegate Key CreateRequestDelegate(Key key, Data data);
+
+        public void ProcessRequests(GetRequestDelegate getRequestDelegate, 
+            UpdateRequestDelegate updateRequestDelegate, 
+            CreateRequestDelegate createRequestDelegate,
+            ManualResetEvent stopEvent, int maxConcurrentCalls = 1)
         {
             var options = new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls };
 
             Client.OnMessage(message =>
             {
-                var request = message.GetBody<Request>();
+                var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
 
-                SafeProcessRequest(requestDelegate, request, message);
+                SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+
             }, options);
 
             stopEvent.WaitOne();
+            Client.Close();
         }
 
-        public void HandleOne(RequestDelegate requestDelegate)
+        /// <summary>
+        /// For test purposes!
+        /// </summary>
+        public void ProcessOneMessage(GetRequestDelegate getRequestDelegate,
+            UpdateRequestDelegate updateRequestDelegate,
+            CreateRequestDelegate createRequestDelegate)
         {
             BrokeredMessage message;
             var request = GetOneMessage<Request>(out message);
             if (request == null) return;
 
-            SafeProcessRequest(requestDelegate, request, message);
+            SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
         }
 
-        private static void SafeProcessRequest(RequestDelegate requestDelegate, Request request, BrokeredMessage message)
+        public static SuccessResponse ProcessRequest(GetRequestDelegate getRequestDelegate,
+            UpdateRequestDelegate updateRequestDelegate,
+            CreateRequestDelegate createRequestDelegate, Request request)
+        {
+            try
+            {
+                var response = new SuccessResponse(request);
+
+                switch (request.RequestType)
+                {
+                    case Request.RequestTypeEnum.Get:
+                        response.Data = getRequestDelegate(request.Key);
+                        break;
+                    case Request.RequestTypeEnum.Update:
+                        updateRequestDelegate(request.Key, request.Data);
+                        break;
+                    case Request.RequestTypeEnum.Create:
+                        var matchId = request.Key.MatchId;
+                        try
+                        {
+                            // Maybe the object already exists, then we just need to update it.
+                            updateRequestDelegate(request.Key, request.Data);
+                        }
+                        catch (NotFoundException)
+                        {
+                            // The object did not exist, we must create it
+                            response.Key = createRequestDelegate(request.Key, request.Data);
+                        }
+                        response.Key.MatchId = matchId;
+                        break;
+                    default:
+                        throw new BadRequestException(String.Format("Unknown request type: \"{0}\"", request.RequestType));
+                }
+
+                return response;
+            }
+            catch (Exception e)
+            {
+                if (e is MatchException) throw;
+
+                throw new InternalServerErrorException(e);
+            }
+        }
+
+        private static void SafeProcessRequest(GetRequestDelegate getRequestDelegate,
+            UpdateRequestDelegate updateRequestDelegate,
+            CreateRequestDelegate createRequestDelegate, Request request, BrokeredMessage message)
         {
             try
             {
                 Log.Information("Processing {0} message", request.RequestTypeAsString);
 
-                var successResponse = requestDelegate(request);
+                var successResponse = ProcessRequest(
+                    getRequestDelegate, updateRequestDelegate, createRequestDelegate,
+                    request);
                 SendResponse(successResponse);
             }
             catch (Exceptions.MovedException exception)
@@ -138,11 +202,6 @@ namespace Xlent.Match.ClientUtilities
             }
             message.Complete();
 
-        }
-
-        public void Close()
-        {
-            Client.Close();
         }
 
         private static void SendResponse<T>(T response) where T : Response
