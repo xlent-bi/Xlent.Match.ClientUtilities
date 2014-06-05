@@ -83,6 +83,7 @@ namespace Xlent.Match.ClientUtilities.Logging
             var log = GetLogger();
             log._traceSource.TraceEvent(eventType, 0, logMessage);
             log._traceSource.Flush();
+            Trace.WriteLine(logMessage);
         }
 
         private static string ExtractExceptionMessages(Exception ex)

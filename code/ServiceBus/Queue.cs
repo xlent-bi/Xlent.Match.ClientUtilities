@@ -94,7 +94,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public long GetLength()
         {
-            return NamespaceManager.GetQueue(Client.Path).MessageCount;
+            return NamespaceManager.GetQueue(Client.Path).MessageCountDetails.ActiveMessageCount;
         }
 
         public void Delete()
