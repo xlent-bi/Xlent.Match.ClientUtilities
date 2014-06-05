@@ -77,5 +77,11 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
 
             return Data.GetPropertyValue(name, true);
         }
+
+        public string this[string name]
+        {
+            get { return GetPropertyValue(name); }
+            set { SetProperty(name, value); }
+        }
     }
 }
