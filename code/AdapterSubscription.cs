@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
@@ -114,16 +115,7 @@ namespace Xlent.Match.ClientUtilities
                         break;
                     case Request.RequestTypeEnum.Create:
                         var matchId = request.Key.MatchId;
-                        try
-                        {
-                            // Maybe the object already exists, then we just need to update it.
-                            updateRequestDelegate(request.Key, request.Data);
-                        }
-                        catch (NotFoundException)
-                        {
-                            // The object did not exist, we must create it
-                            response.Key = createRequestDelegate(request.Key, request.Data);
-                        }
+                        response.Key = createRequestDelegate(request.Key, request.Data);
                         response.Key.MatchId = matchId;
                         break;
                     default:
@@ -200,8 +192,17 @@ namespace Xlent.Match.ClientUtilities
 
                 SendResponse(failureResponse);
             }
-            message.Complete();
 
+            // Try to complete this message since we should have sent a response, either success or failure at
+            // this point, if we fail it could be because the message has timed out and then we will process it
+            // again so we just fail silently here
+            try
+            {
+                message.Complete();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static void SendResponse<T>(T response) where T : Response

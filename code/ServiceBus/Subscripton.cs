@@ -66,7 +66,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public long GetLength()
         {
-            return _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name).MessageCount;
+            return _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name).MessageCountDetails.ActiveMessageCount;
         }
     }
 }
