@@ -15,7 +15,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <param name="request">The associated request.</param>
         /// <remarks><see cref="MatchObject"/> is the only property that is not set by this constructor.</remarks>
         public SuccessResponse(Request request)
-            : base(request, Response.ResponseTypeEnum.Success)
+            : base(request, ResponseTypeEnum.Success)
         {
         }
     }

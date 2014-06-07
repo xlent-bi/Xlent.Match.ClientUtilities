@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.Serialization;
 using Xlent.Match.ClientUtilities.MatchObjectModel;
 
@@ -19,6 +18,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <summary>
         /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
         /// and <see cref="Response.Failure"/>.
+        /// </summary>
         [DataMember]
         public string ResponseTypeAsString { get; private set; }
 

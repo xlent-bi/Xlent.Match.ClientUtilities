@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using Microsoft.ServiceBus;
+﻿using Microsoft.ServiceBus;
 using Microsoft.WindowsAzure;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
