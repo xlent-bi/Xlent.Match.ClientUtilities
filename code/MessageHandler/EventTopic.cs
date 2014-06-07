@@ -11,14 +11,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         public static Topic Topic
         {
-            get
-            {
-                if (_topic == null)
-                {
-                    _topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event");
-                }
-                return _topic;
-            }
+            get { return _topic ?? (_topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event")); }
 
             set { _topic = value; }
         }
