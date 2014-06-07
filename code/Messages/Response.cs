@@ -19,6 +19,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// <summary>
         /// The type of the response. Mandatory, one of <see cref="Response.Success"/>,
         /// and <see cref="Response.Failure"/>.
+        /// </summary>
         [DataMember]
         public string ResponseTypeAsString { get; private set; }
 
