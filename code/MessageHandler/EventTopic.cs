@@ -72,7 +72,6 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         private static void AddOptionalFields(Event theEvent, string userName = null, DateTime? timeStamp = null, string externalReference = null)
         {
-            DateTime time = timeStamp??DateTime.UtcNow;
             theEvent.UserName = userName;
             theEvent.ExternalReference = externalReference;
         }

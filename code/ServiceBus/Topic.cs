@@ -11,7 +11,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
     public class Topic : BaseClass, IQueueSender, IQueueAdministrator
     {
         public Topic(string connectionStringName, string name)
-            :base(connectionStringName)
+            : base(connectionStringName)
         {
             Name = name;
             if (!NamespaceManager.TopicExists(name))
@@ -34,7 +34,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 }
             }
 
-            this.Client = TopicClient.CreateFromConnectionString(ConnectionString, name);
+            Client = TopicClient.CreateFromConnectionString(ConnectionString, name);
         }
 
         public TopicClient Client { get; private set; }
@@ -45,7 +45,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Send(newMessage);
         }
 
-        public void Send<T>(T message, IDictionary<string,object> properties)
+        public void Send<T>(T message, IDictionary<string, object> properties)
         {
             var m = new BrokeredMessage(message, new DataContractSerializer(typeof(T)));
             if (properties != null)
