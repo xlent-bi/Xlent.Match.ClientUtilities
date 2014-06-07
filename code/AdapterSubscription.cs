@@ -143,7 +143,7 @@ namespace Xlent.Match.ClientUtilities
                     request);
                 SendResponse(successResponse);
             }
-            catch (Exceptions.MovedException exception)
+            catch (MovedException exception)
             {
                 Log.Information(exception.Message);
 
@@ -168,7 +168,7 @@ namespace Xlent.Match.ClientUtilities
 
                 SendResponse(failureResponse);
             }
-            catch (Exceptions.MatchException exception)
+            catch (MatchException exception)
             {
                 Log.Error(exception, "An error has occured");
 
