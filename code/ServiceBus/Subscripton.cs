@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Runtime.Serialization;
-using System.ServiceModel.Channels;
-using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus

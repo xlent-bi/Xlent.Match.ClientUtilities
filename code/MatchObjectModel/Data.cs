@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Xml.Linq;
-using System.Xml.Schema;
-using System.Xml.Serialization;
 
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
 {
@@ -149,14 +146,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
                 throw new ArgumentNullException("source");
             }
 
-            if (source.Properties == null)
-            {
-                Properties = null;
-            }
-            else
-            {
-                Properties = new Dictionary<string, string>(source.Properties);
-            }
+            Properties = source.Properties == null ? null : new Dictionary<string, string>(source.Properties);
 
             if (source.NestedProperties == null)
             {
