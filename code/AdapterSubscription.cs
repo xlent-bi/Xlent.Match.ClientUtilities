@@ -62,8 +62,8 @@ namespace Xlent.Match.ClientUtilities
 
         public delegate Key CreateRequestDelegate(Key key, Data data);
 
-        public void ProcessRequests(GetRequestDelegate getRequestDelegate, 
-            UpdateRequestDelegate updateRequestDelegate, 
+        public void ProcessRequests(GetRequestDelegate getRequestDelegate,
+            UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate,
             ManualResetEvent stopEvent, int maxConcurrentCalls = 1)
         {
@@ -152,7 +152,7 @@ namespace Xlent.Match.ClientUtilities
                 {
                     Value = oldId,
                     Message = exception.Message,
-                    Key = {Value = exception.NewKeyValue}
+                    Key = { Value = exception.NewKeyValue }
                 };
 
                 SendResponse(failureResponse);
@@ -192,14 +192,17 @@ namespace Xlent.Match.ClientUtilities
             }
 
             // Try to complete this message since we should have sent a response, either success or failure at
-            // this point, if we fail it could be because the message has timed out and then we will process it
-            // again so we just fail silently here
+            // this point.
             try
             {
                 message.Complete();
             }
+// ReSharper disable once EmptyGeneralCatchClause
             catch (Exception)
             {
+                // Intientional error suppression
+                // If we fail it could be because the message has timed out and then we will process it
+                // again so we just fail silently here
             }
         }
 

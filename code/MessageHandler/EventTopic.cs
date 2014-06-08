@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
 
@@ -74,6 +75,10 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         {
             theEvent.UserName = userName;
             theEvent.ExternalReference = externalReference;
+            if (null != timeStamp)
+            {
+                theEvent.TimeStamp = ((DateTime)timeStamp).ToUniversalTime().ToString(CultureInfo.InvariantCulture);
+            }
         }
     }
 }
