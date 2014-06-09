@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -12,16 +13,27 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             : base(connectionStringName)
         {
             Name = name;
-            SafeCreateTopic(name);
+            CreateTopicTransient(name);
 
-            Client = TopicClient.CreateFromConnectionString(ConnectionString, name);
+            Client = MessagingFactory.CreateTopicClient(name);
+        }
+
+        public Topic(string connectionStringName, string pairedConnectionStringName, string name)
+            : base(connectionStringName)
+        {
+            Name = name;
+
+            CreatePairedNamespaceManager(pairedConnectionStringName); 
+            CreateTopicTransient(name);
+
+            Client = MessagingFactory.CreateTopicClient(name);
         }
 
         private TopicClient Client { get; set; }
 
         public string Name { get; private set; }
 
-        private void SafeCreateTopic(string name)
+        private void CreateTopicTransient(string name)
         {
             if (NamespaceManager.TopicExists(name)) return;
 
@@ -101,7 +113,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         private SubscriptionClient CreateSubscriptionClient(string name)
         {
-            return RetryPolicy.ExecuteAction(() => SubscriptionClient.CreateFromConnectionString(ConnectionString, Client.Path, name));
+            return RetryPolicy.ExecuteAction(() => MessagingFactory.CreateSubscriptionClient(Client.Path, name));
         }
 
         private SubscriptionDescription CreateSubscription(string name)

@@ -64,10 +64,10 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             subscriptionDescription.Status = EntityStatus.Active;
             SetSubscriptionDescription(subscriptionDescription);
         }
-
-        private SubscriptionDescription SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
+         
+        private void SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
         {
-            return RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
+            RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
         }
 
         private SubscriptionDescription GetSubscriptionDescription()
