@@ -65,6 +65,11 @@ namespace Xlent.Match.ClientUtilities.Logging
             LogEvent(TraceEventType.Information, null, message, parameters);
         }
 
+        public static void Information(Exception exception, string message, params object[] parameters)
+        {
+            LogEvent(TraceEventType.Information, exception, message, parameters);
+        }
+
         public static void Verbose(string message, params object[] parameters)
         {
             LogEvent(TraceEventType.Verbose, null, message, parameters);
