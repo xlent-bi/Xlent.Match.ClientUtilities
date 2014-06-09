@@ -14,30 +14,28 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             Name = name;
             // Create a new Queue with custom settings
-            if (!NamespaceManager.QueueExists(name))
-            {
-                try
-                {
-                    // Configure Queue Settings
-                    var qd = new QueueDescription(name);
-                    //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
-                    NamespaceManager.CreateQueue(qd);
-                }
-                catch (Exception)
-                {
-                    if (!NamespaceManager.QueueExists(name))
-                    {
-                        throw;
-                    }
-                    // Somebody else beat us and created the queue.
-                }
-            }
-
+            SafeCreateQueue(name);
             Client = QueueClient.CreateFromConnectionString(ConnectionString, name);
         }
 
-        public QueueClient Client { get; private set; }
+        private QueueClient Client { get; set; }
+
+        private void SafeCreateQueue(string name)
+        {
+            if (NamespaceManager.QueueExists(name)) return;
+
+            try
+            {
+                // Configure Queue Settings
+                var qd = new QueueDescription(name);
+                RetryPolicy.ExecuteAction(() => NamespaceManager.CreateQueue(qd));
+            }
+            catch (Exception)
+            {
+                if (NamespaceManager.QueueExists(name)) return;
+                throw;
+            }
+        }
 
         public void Send<T>(T message, IDictionary<string, object> properties = null)
         {
@@ -61,16 +59,16 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public void Send(BrokeredMessage message)
         {
-            Client.Send(message);
+            RetryPolicy.ExecuteAction(() => Client.Send(message));
         }
 
         public void ResendAndComplete(BrokeredMessage message)
         {
             var newMessage = message.Clone();
-            Client.Send(newMessage);
+            Send(newMessage);
             try
             {
-                message.Complete();
+                 RetryPolicy.ExecuteAction(message.Complete);
             }
             // ReSharper disable once EmptyGeneralCatchClause
             catch
@@ -80,32 +78,34 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public BrokeredMessage NonBlockingReceive()
         {
-            return Client.Receive(TimeSpan.FromSeconds(1));
+            return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
         }
 
         public BrokeredMessage BlockingReceive()
         {
             while (true)
             {
-                var message = Client.Receive(TimeSpan.FromMinutes(60));
+                BrokeredMessage message = null;
+                RetryPolicy.ExecuteAction(() => message = Client.Receive(TimeSpan.FromMinutes(60)));
                 if (message != null) return message;
             }
         }
 
         public long GetLength()
         {
-            return NamespaceManager.GetQueue(Client.Path).MessageCountDetails.ActiveMessageCount;
+            var queueDescription = GetQueueDescription();
+            return queueDescription.MessageCountDetails.ActiveMessageCount;
         }
 
         public void Delete()
         {
-            NamespaceManager.DeleteQueue(Client.Path);
+            RetryPolicy.ExecuteAction(() => NamespaceManager.DeleteQueue(Client.Path));
         }
 
         public async Task DeleteAsync()
         {
-            await NamespaceManager.DeleteQueueAsync(Client.Path);
-    }
+            await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteQueueAsync(Client.Path));
+        }
 
 
         public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
@@ -115,16 +115,26 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public void Activate()
         {
-            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            var queueDescription = GetQueueDescription();
             queueDescription.Status = EntityStatus.Active;
-            NamespaceManager.UpdateQueue(queueDescription);
+            SetQueueDescription(queueDescription);
         }
 
         public void Disable()
         {
-            var queueDescription = NamespaceManager.GetQueue(Client.Path);
+            var queueDescription = GetQueueDescription();
             queueDescription.Status = EntityStatus.ReceiveDisabled;
-            NamespaceManager.UpdateQueue(queueDescription);
+            SetQueueDescription(queueDescription);
+        }
+
+        private QueueDescription GetQueueDescription()
+        {
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.GetQueue(Client.Path));
+        }
+
+        private void SetQueueDescription(QueueDescription queueDescription)
+        {
+            RetryPolicy.ExecuteAction(() => NamespaceManager.UpdateQueue(queueDescription));
         }
     }
 }
