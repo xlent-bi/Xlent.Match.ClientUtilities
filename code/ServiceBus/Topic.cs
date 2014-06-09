@@ -118,8 +118,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         private SubscriptionDescription CreateSubscription(string name)
         {
-            //return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name));
-            return NamespaceManager.CreateSubscription(Client.Path, name);
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name));
         }
 
         private SubscriptionDescription CreateSubscription(string name, Filter filter)
