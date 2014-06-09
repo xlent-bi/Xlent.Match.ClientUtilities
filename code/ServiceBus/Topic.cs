@@ -12,35 +12,49 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             : base(connectionStringName)
         {
             Name = name;
-            if (!NamespaceManager.TopicExists(name))
-            {
-                try
-                {
-                    // Configure Topic Settings
-                    var td = new TopicDescription(name);
-                    //qd.MaxSizeInMegabytes = 5120;
-                    //qd.DefaultMessageTimeToLive = TimeSpan.FromSeconds(60);
-                    NamespaceManager.CreateTopic(td);
-                }
-                catch (Exception)
-                {
-                    if (!NamespaceManager.TopicExists(name))
-                    {
-                        throw;
-                    }
-                    // Somebody else beat us and created the queue.
-                }
-            }
+            SafeCreateTopic(name);
 
             Client = TopicClient.CreateFromConnectionString(ConnectionString, name);
         }
 
-        public TopicClient Client { get; private set; }
+        private TopicClient Client { get; set; }
+
+        public string Name { get; private set; }
+
+        private void SafeCreateTopic(string name)
+        {
+            if (NamespaceManager.TopicExists(name)) return;
+
+            try
+            {
+                // Configure Topic Settings
+                var qd = new TopicDescription(name);
+                RetryPolicy.ExecuteAction(() => NamespaceManager.CreateTopic(qd));
+            }
+            catch (Exception)
+            {
+                if (NamespaceManager.TopicExists(name)) return;
+                throw;
+            }
+        }
 
         public void Resend(BrokeredMessage message)
         {
             var newMessage = message.Clone();
             Send(newMessage);
+        }
+
+        public void ResendAndComplete(BrokeredMessage message)
+        {
+            Resend(message);
+            try
+            {
+                RetryPolicy.ExecuteAction(message.Complete);
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch
+            {
+            }
         }
 
         public void Send<T>(T message, IDictionary<string, object> properties)
@@ -56,65 +70,78 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Send(m);
         }
 
-        public void GetOrCreateSubscription(string name, Filter filter)
+        public void Send(BrokeredMessage message)
         {
-            if (NamespaceManager.SubscriptionExists(Client.Path, name)) return;
+            RetryPolicy.ExecuteAction(() => Client.Send(message));
+        }
+
+        public SubscriptionClient GetOrCreateSubscription(string name, Filter filter)
+        {
+            if (SubscriptionExists(name)) return CreateSubscriptionClient(name);
 
             try
             {
                 if (filter == null)
                 {
-                    NamespaceManager.CreateSubscription(Client.Path, name);
+                    CreateSubscription(name);
                 }
                 else
                 {
-                    NamespaceManager.CreateSubscription(Client.Path, name, filter);
+                    CreateSubscription(name, filter);
                 }
+                return CreateSubscriptionClient(name);
             }
             catch (Exception)
             {
-                if (!NamespaceManager.SubscriptionExists(Client.Path, name))
-                {
-                    throw;
-                }
-                // Somebody else beat us and created the queue.
+                if (SubscriptionExists(name)) return CreateSubscriptionClient(name);
+                throw;
             }
+
+        }
+
+        private SubscriptionClient CreateSubscriptionClient(string name)
+        {
+            return RetryPolicy.ExecuteAction(() => SubscriptionClient.CreateFromConnectionString(ConnectionString, Client.Path, name));
+        }
+
+        private SubscriptionDescription CreateSubscription(string name)
+        {
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name));
+        }
+
+        private SubscriptionDescription CreateSubscription(string name, Filter filter)
+        {
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name, filter));
+        }
+
+        private bool SubscriptionExists(string name)
+        {
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.SubscriptionExists(Client.Path, name));
         }
 
         public long GetLength()
         {
-            return NamespaceManager.GetTopic(Client.Path).MessageCountDetails.ActiveMessageCount;
+            return GetTopicDescription().MessageCountDetails.ActiveMessageCount;
         }
 
         public void Delete()
         {
-            NamespaceManager.DeleteTopic(Client.Path);
+            RetryPolicy.ExecuteAction(() => NamespaceManager.DeleteTopic(Client.Path));
         }
 
         public async Task DeleteAsync()
         {
-            await NamespaceManager.DeleteTopicAsync(Client.Path);
+            await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteTopicAsync(Client.Path));
         }
 
-        public void Send(BrokeredMessage message)
+        private TopicDescription GetTopicDescription()
         {
-            Client.Send(message);
+            return RetryPolicy.ExecuteAction(() => NamespaceManager.GetTopic(Client.Path));
         }
 
-        public void ResendAndComplete(BrokeredMessage message)
+        private void SetTopicDescription(TopicDescription topicDescription)
         {
-            var newMessage = message.Clone();
-            Client.Send(newMessage);
-            try
-            {
-                message.Complete();
-            }
-            // ReSharper disable once EmptyGeneralCatchClause
-            catch
-            {
-            }
+            RetryPolicy.ExecuteAction(() => NamespaceManager.UpdateTopic(topicDescription));
         }
-
-        public string Name { get; private set; }
     }
 }
