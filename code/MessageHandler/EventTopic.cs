@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using Xlent.Match.ClientUtilities.Messages;
 using Xlent.Match.ClientUtilities.ServiceBus;
@@ -12,7 +13,20 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         public static Topic Topic
         {
-            get { return _topic ?? (_topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event")); }
+            get
+            {
+                if (_topic != null)
+                    return _topic;
+
+                var pairedConnectionString =
+                    ConfigurationManager.AppSettings["Xlent.Match.ClientUtilities.PairedConnectionString"];
+                if( ! String.IsNullOrEmpty(pairedConnectionString) )
+                    _topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Xlent.Match.ClientUtilities.PairedConnectionString", "Event");
+                else
+                    _topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event");
+
+                return _topic;
+            }
 
             set { _topic = value; }
         }

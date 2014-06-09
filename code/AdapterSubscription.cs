@@ -69,7 +69,7 @@ namespace Xlent.Match.ClientUtilities
         {
             var options = new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls };
 
-            Client.OnMessage(message =>
+            OnMessage(message =>
             {
                 var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
 
@@ -78,7 +78,7 @@ namespace Xlent.Match.ClientUtilities
             }, options);
 
             stopEvent.WaitOne();
-            Client.Close();
+            Close();
         }
 
         /// <summary>

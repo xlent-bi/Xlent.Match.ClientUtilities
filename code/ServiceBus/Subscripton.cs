@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -11,13 +12,17 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public Subscription(Topic topic, string name, Filter filter)
         {
             _topic = topic;
-            topic.GetOrCreateSubscription(name, filter);
-            Client = SubscriptionClient.CreateFromConnectionString(topic.ConnectionString, topic.Client.Path, name);
-        }
+            Client = topic.GetOrCreateSubscription(name, filter);
+       }
 
         public Topic Topic { get { return _topic; } }
 
-        public SubscriptionClient Client { get; private set; }
+        public RetryPolicy<ServiceBusTransientErrorDetectionStrategy> RetryPolicy
+        {
+            get { return _topic.RetryPolicy; }
+        }
+
+        private SubscriptionClient Client { get; set; }
 
         public T GetOneMessage<T>(out BrokeredMessage message) where T : class
         {
@@ -31,14 +36,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public BrokeredMessage NonBlockingReceive()
         {
-            return Client.Receive(TimeSpan.FromSeconds(1));
+            return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
         }
 
         public BrokeredMessage BlockingReceive()
         {
             while (true)
             {
-                var message = Client.Receive(TimeSpan.FromMinutes(60));
+                var message = RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromMinutes(60)));
                 if (message != null) return message;
             }
         }
@@ -48,23 +53,38 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessage(action, onMessageOptions);
         }
 
+        public void Close()
+        {
+            RetryPolicy.ExecuteAction(() => Client.Close());
+        }
+
         public void Activate()
         {
-            var subscriptionDescription = _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name);
+            var subscriptionDescription = GetSubscriptionDescription();
             subscriptionDescription.Status = EntityStatus.Active;
-            _topic.NamespaceManager.UpdateSubscription(subscriptionDescription);
+            SetSubscriptionDescription(subscriptionDescription);
+        }
+         
+        private void SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
+        {
+            RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
+        }
+
+        private SubscriptionDescription GetSubscriptionDescription()
+        {
+            return RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name));
         }
 
         public void Disable()
         {
-            var subscriptionDescription = _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name);
+            var subscriptionDescription = GetSubscriptionDescription();
             subscriptionDescription.Status = EntityStatus.ReceiveDisabled;
-            _topic.NamespaceManager.UpdateSubscription(subscriptionDescription);
+            SetSubscriptionDescription(subscriptionDescription);
         }
 
         public long GetLength()
         {
-            return _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name).MessageCountDetails.ActiveMessageCount;
+            return GetSubscriptionDescription().MessageCountDetails.ActiveMessageCount;
         }
     }
 }
