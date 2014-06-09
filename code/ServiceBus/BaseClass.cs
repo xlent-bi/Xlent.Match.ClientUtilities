@@ -23,12 +23,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             lock (LockThisClass)
             {
                 if (_hasBeenInitialized) return;
-                var strategy = new ExponentialBackoff("ServiceBusStrategy",
-                    RetryStrategy.DefaultClientRetryCount,
-                    RetryStrategy.DefaultMinBackoff,
-                    RetryStrategy.DefaultMaxBackoff,
-                    RetryStrategy.DefaultMinBackoff);
-                _retryPolicy = new RetryPolicy<ServiceBusTransientErrorDetectionStrategy>(strategy);
+                _retryPolicy = new RetryPolicy<ServiceBusTransientErrorDetectionStrategy>(RetryStrategy.DefaultClientRetryCount);
                 _hasBeenInitialized = true;
             }
         }
@@ -42,7 +37,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         protected void CreatePairedNamespaceManager(string pairedConnectionStringName)
         {
             var pairedConnectionString = CloudConfigurationManager.GetSetting(pairedConnectionStringName);
-            var pairedNamespaceManager = Microsoft.ServiceBus.NamespaceManager.CreateFromConnectionString(pairedConnectionString);
+            var pairedNamespaceManager = NamespaceManager.CreateFromConnectionString(pairedConnectionString);
             var pairedMessagingFactory = MessagingFactory.CreateFromConnectionString(pairedConnectionString);
             var pairedNamespaceOptions = new SendAvailabilityPairedNamespaceOptions(pairedNamespaceManager,
                 pairedMessagingFactory);

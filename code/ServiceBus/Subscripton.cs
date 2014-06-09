@@ -43,7 +43,8 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             while (true)
             {
-                var message = RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromMinutes(60)));
+                //var message = RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromMinutes(60)));
+                var message = Client.Receive(TimeSpan.FromMinutes(60));
                 if (message != null) return message;
             }
         }
