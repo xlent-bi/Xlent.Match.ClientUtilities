@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -12,5 +13,6 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions);
         void Disable();
         void Activate();
+        Task FlushAsync();
     }
 }

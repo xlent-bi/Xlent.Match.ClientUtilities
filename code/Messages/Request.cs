@@ -8,7 +8,7 @@ namespace Xlent.Match.ClientUtilities.Messages
     /// This message is used by Match to send requests to the client adapters.
     /// </summary>
     [DataContract]
-    public class Request
+    public class Request : IProcessMessage
     {
         public const string Create = "Create";
         public const string Update = "Update";
@@ -124,7 +124,7 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         public override string ToString()
         {
-            return String.Format("Request of type {0} for key {1}.", RequestTypeAsString, Key);
+            return String.Format("[Request {0} {1}]", RequestTypeAsString, Key);
         }
     }
 }

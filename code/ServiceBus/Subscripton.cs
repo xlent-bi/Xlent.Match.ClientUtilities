@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 using Microsoft.ServiceBus.Messaging;
 
@@ -14,6 +15,12 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             _topic = topic;
             Client = topic.GetOrCreateSubscription(name, filter);
        }
+
+        public Subscription(Topic topic, SubscriptionDescription subscriptionDescription)
+        {
+            _topic = topic;
+            Client = topic.CreateSubscriptionClient(subscriptionDescription.Name);
+        }
 
         public Topic Topic { get { return _topic; } }
 
@@ -37,6 +44,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public BrokeredMessage NonBlockingReceive()
         {
             return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
+        }
+
+        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        {
+            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
         }
 
         public BrokeredMessage BlockingReceive()
@@ -85,6 +97,17 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public long GetLength()
         {
             return GetSubscriptionDescription().MessageCountDetails.ActiveMessageCount;
+        }
+
+        public async Task FlushAsync()
+        {
+            do
+            {
+                var task = NonBlockingReceiveAsync();
+                var message = await task;
+                if (message == null) break;
+                await message.CompleteAsync();
+            } while (true);
         }
     }
 }

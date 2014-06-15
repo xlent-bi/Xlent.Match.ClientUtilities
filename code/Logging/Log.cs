@@ -32,63 +32,121 @@ namespace Xlent.Match.ClientUtilities.Logging
 
         public static void Critical(string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Critical, null, message, parameters);
+            LogEventCatchAll(TraceEventType.Critical, null, message, parameters);
         }
 
         public static void Critical(Exception exception, string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Critical, exception, message, parameters);
+            LogEventCatchAll(TraceEventType.Critical, exception, message, parameters);
+        }
+
+        public static void UncaughtException(Exception exception)
+        {
+            Critical(exception, "Uncaught exception");
+        }
+
+        public static void UncaughtException(Exception exception, string format, params object[] parameters)
+        {
+            Critical(exception, format, parameters);
         }
 
         public static void Error(string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Error, null, message, parameters);
+            LogEventCatchAll(TraceEventType.Error, null, message, parameters);
         }
 
         public static void Error(Exception exception, string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Error, exception, message, parameters);
+            LogEventCatchAll(TraceEventType.Error, exception, message, parameters);
         }
 
         public static void Warning(string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Warning, null, message, parameters);
+            LogEventCatchAll(TraceEventType.Warning, null, message, parameters);
         }
 
         public static void Warning(Exception exception, string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Warning, exception, message, parameters);
+            LogEventCatchAll(TraceEventType.Warning, exception, message, parameters);
         }
 
         public static void Information(string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Information, null, message, parameters);
+            LogEventCatchAll(TraceEventType.Information, null, message, parameters);
         }
 
         public static void Information(Exception exception, string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Information, exception, message, parameters);
+            LogEventCatchAll(TraceEventType.Information, exception, message, parameters);
         }
 
         public static void Verbose(string message, params object[] parameters)
         {
-            LogEvent(TraceEventType.Verbose, null, message, parameters);
+            LogEventCatchAll(TraceEventType.Verbose, null, message, parameters);
         }
 
-        private static void LogEvent(TraceEventType eventType, Exception exception, string message, params object[] parameters)
+        private static void LogEventCatchAll(TraceEventType eventType, Exception exception, string format, params object[] parameters)
         {
-            if (parameters.Length > 0)
+            try
             {
-                message = String.Format(message, parameters);
+                var message = parameters.Length > 0 ? String.Format(format, parameters) : format;
+
+                var logMessage = String.Format("{0}{1}{2}.", message, (exception == null) ? "" : ": ",
+                    (exception == null) ? "" : ExtractExceptionMessages(exception));
+                LogEvent(eventType, logMessage);
             }
+            catch (Exception ex)
+            {
+                try
+                {
+                    UncaughtException(ex);
+                }
+                // It is very important that the logging never fails.
+                // ReSharper disable once EmptyGeneralCatchClause
+                catch
+                {
+                }
+            }
+        }
 
-            var logMessage = String.Format("{0}{1}{2}.", message, (exception == null) ? "" : ": ",
-                (exception == null) ? "" : ExtractExceptionMessages(exception));
+        private static void LogEvent(TraceEventType eventType, string message)
+        {
+            try
+            {
+                var log = GetLogger();
+                log._traceSource.TraceEvent(eventType, 0, message);
+                log._traceSource.Flush();
+                WriteForDebug(eventType, message);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Uncaught exception: " + ex);
+                throw;
+            }
+        }
 
-            var log = GetLogger();
-            log._traceSource.TraceEvent(eventType, 0, logMessage);
-            log._traceSource.Flush();
-            Trace.WriteLine(logMessage);
+        private static void WriteForDebug(TraceEventType eventType, string message)
+        {
+            var level = "{?}";
+            switch (eventType)
+            {
+                case TraceEventType.Critical:
+                    level = "{CRITICAL}";
+                    break;
+                case TraceEventType.Error:
+                    level = "{ERR}";
+                    break;
+                case TraceEventType.Warning:
+                    level = "{WRN}";
+                    break;
+                case TraceEventType.Information:
+                    level = "{I}";
+                    break;
+                case TraceEventType.Verbose:
+                    level = "{V}";
+                    break;
+             }
+            Debug.WriteLine(level + " " + message);
         }
 
         private static string ExtractExceptionMessages(Exception ex)

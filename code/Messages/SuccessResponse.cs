@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 using Xlent.Match.ClientUtilities.MatchObjectModel;
 
 namespace Xlent.Match.ClientUtilities.Messages

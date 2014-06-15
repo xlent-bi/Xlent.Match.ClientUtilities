@@ -119,5 +119,10 @@ namespace Xlent.Match.ClientUtilities.Messages
                     throw new ArgumentException(String.Format("Unknown error type: \"{0}\".", errorType));
             }
         }
+
+        public override string ToString()
+        {
+            return String.Format("[FailureReponse {0} {1}]", ErrorTypeAsString, base.ToString());
+        }
     }
 }

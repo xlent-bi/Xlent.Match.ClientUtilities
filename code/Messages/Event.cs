@@ -8,7 +8,7 @@ namespace Xlent.Match.ClientUtilities.Messages
     /// Use this message whenever one of your synchronized objects has changed, to make Match initiate its processing.
     /// </summary>
     [DataContract(Name = "Event", Namespace = "http://xlentmatch.com/")]
-    public class Event
+    public class Event : IKeyMessage
     {
         public const string Updated = "Updated";
         public const string Moved = "Moved";
@@ -123,6 +123,13 @@ namespace Xlent.Match.ClientUtilities.Messages
                 default:
                     throw new ArgumentException(String.Format("Unknown event type: \"{0}\".", eventType));
             }
+        }
+
+        public override string ToString()
+        {
+            return OldId != null ? 
+                String.Format("[Event {0} {1} ({2})]", EventTypeAsString, Key, OldId) 
+                : String.Format("[Event {0} {1}]", EventTypeAsString, Key);
         }
     }
 }

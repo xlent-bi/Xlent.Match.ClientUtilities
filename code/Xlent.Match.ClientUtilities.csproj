@@ -141,6 +141,8 @@
     <Compile Include="MatchObjectModel\MatchObject.cs" />
     <Compile Include="MessageHandler\EventTopic.cs" />
     <Compile Include="Messages\Event.cs" />
+    <Compile Include="Messages\IKeyMessage.cs" />
+    <Compile Include="Messages\IProcessMessage.cs" />
     <Compile Include="Messages\SuccessResponse.cs" />
     <Compile Include="Messages\Response.cs" />
     <Compile Include="Messages\FailureResponse.cs" />

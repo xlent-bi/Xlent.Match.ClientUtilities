@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
@@ -42,7 +41,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         protected void CreatePairedNamespaceManager(string pairedConnectionStringName)
         {
             var pairedConnectionString = CloudConfigurationManager.GetSetting(pairedConnectionStringName);
-            var pairedNamespaceManager = Microsoft.ServiceBus.NamespaceManager.CreateFromConnectionString(pairedConnectionString);
+            var pairedNamespaceManager = NamespaceManager.CreateFromConnectionString(pairedConnectionString);
             var pairedMessagingFactory = MessagingFactory.CreateFromConnectionString(pairedConnectionString);
             var pairedNamespaceOptions = new SendAvailabilityPairedNamespaceOptions(pairedNamespaceManager,
                 pairedMessagingFactory);

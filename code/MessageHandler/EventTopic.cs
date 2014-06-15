@@ -20,10 +20,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
                 var pairedConnectionString =
                     ConfigurationManager.AppSettings["Xlent.Match.ClientUtilities.PairedConnectionString"];
-                if( ! String.IsNullOrEmpty(pairedConnectionString) )
-                    _topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Xlent.Match.ClientUtilities.PairedConnectionString", "Event");
-                else
-                    _topic = new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event");
+                _topic = ! String.IsNullOrEmpty(pairedConnectionString) ? new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Xlent.Match.ClientUtilities.PairedConnectionString", "Event") : new Topic("Xlent.Match.ClientUtilities.ConnectionString", "Event");
 
                 return _topic;
             }

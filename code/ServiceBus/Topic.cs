@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using Microsoft.WindowsAzure;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
@@ -111,7 +111,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         }
 
-        private SubscriptionClient CreateSubscriptionClient(string name)
+        protected internal SubscriptionClient CreateSubscriptionClient(string name)
         {
             return RetryPolicy.ExecuteAction(() => MessagingFactory.CreateSubscriptionClient(Client.Path, name));
         }
@@ -144,6 +144,19 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task DeleteAsync()
         {
             await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteTopicAsync(Client.Path));
+        }
+
+        public async Task FlushAsync()
+        {
+            await Task.Run(() => Flush());
+        }
+
+        public void Flush()
+        {
+            Task.WaitAll(NamespaceManager.GetSubscriptions(Client.Path)
+                .Select(subscriptionDescription => new Subscription(this, subscriptionDescription))
+                .Select(subscription => subscription.FlushAsync())
+                .ToArray());
         }
 
         private TopicDescription GetTopicDescription()

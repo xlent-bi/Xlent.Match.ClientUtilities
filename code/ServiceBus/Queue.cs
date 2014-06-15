@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 using System;
@@ -81,6 +82,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
         }
 
+        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        {
+            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+        }
+
         public BrokeredMessage BlockingReceive()
         {
             while (true)
@@ -105,6 +111,17 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task DeleteAsync()
         {
             await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteQueueAsync(Client.Path));
+        }
+
+        public async Task FlushAsync()
+        {
+            do
+            {
+                var task = NonBlockingReceiveAsync();
+                var message = await task;
+                if (message == null) break;
+                await message.CompleteAsync();
+            } while (true);
         }
 
 

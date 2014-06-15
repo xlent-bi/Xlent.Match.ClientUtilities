@@ -8,7 +8,7 @@ namespace Xlent.Match.ClientUtilities.Messages
     /// Abstract class for a responses to a Match <see cref="Request"/>.
     /// </summary>
     [DataContract(Name = "Response", Namespace = "http://xlentmatch.com/")]
-    public abstract class Response
+    public abstract class Response : IProcessMessage
     {
         public const string Success = "Success";
         public const string Failure = "Failure";
@@ -133,7 +133,7 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         public override string ToString()
         {
-            return String.Format("{0} response for request {1} for key {2}.", ResponseTypeAsString, RequestTypeAsString, Key);
+            return String.Format("[Response {0} {1} {2}]", ResponseTypeAsString, RequestTypeAsString, Key);
         }
     }
 }
