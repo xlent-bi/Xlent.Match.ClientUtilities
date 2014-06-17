@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
@@ -65,6 +66,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessage(action, onMessageOptions);
         }
 
+        public void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessageAsync(asyncAction, onMessageOptions);
+        }
+
         public void Close()
         {
             RetryPolicy.ExecuteAction(() => Client.Close());
@@ -103,10 +109,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             do
             {
-                var task = NonBlockingReceiveAsync();
-                var message = await task;
-                if (message == null) break;
-                await message.CompleteAsync();
+                var messages = await Client.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(100));
+                var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
+                if (!brokeredMessages.Any()) break;
+
+                Parallel.ForEach(brokeredMessages, async brokeredMessage => await brokeredMessage.CompleteAsync());
             } while (true);
         }
     }
