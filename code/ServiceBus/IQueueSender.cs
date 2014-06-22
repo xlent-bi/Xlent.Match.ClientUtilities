@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 
@@ -10,7 +11,8 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         long GetLength();
         void Send(BrokeredMessage message);
         void Send<T>(T message, IDictionary<string, object> properties = null);
-        void ResendAndComplete(BrokeredMessage message);
+        Task ResendAndCompleteAsync(BrokeredMessage message);
         Task FlushAsync();
+        Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
 {
@@ -32,6 +33,11 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         /// </summary>
         [DataMember]
         public string MatchId { get; set; }
+
+        public string CompactKey
+        {
+            get { return String.Join("/", ClientName, EntityName, Value ?? MatchId); }
+        }
 
         public Key(string clientName, string entityName, string value, string matchId = null)
         {

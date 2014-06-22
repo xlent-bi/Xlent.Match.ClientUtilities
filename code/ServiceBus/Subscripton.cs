@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Practices.EnterpriseLibrary.TransientFaultHandling;
 using Microsoft.ServiceBus.Messaging;
+using Xlent.Match.ClientUtilities.Logging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
@@ -65,6 +67,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessage(action, onMessageOptions);
         }
 
+        public void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessageAsync(asyncAction, onMessageOptions);
+        }
+
         public void Close()
         {
             RetryPolicy.ExecuteAction(() => Client.Close());
@@ -101,13 +108,81 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public async Task FlushAsync()
         {
+            await ForEachMessageAsync(async message => await Task.Run(() => {}));
+ 
             do
             {
-                var task = NonBlockingReceiveAsync();
-                var message = await task;
-                if (message == null) break;
-                await message.CompleteAsync();
+                var deadLetterPath = SubscriptionClient.FormatDeadLetterPath(_topic.Name, Name);
+                var deadLetterMessagingFactory = MessagingFactory.CreateFromConnectionString(_topic.ConnectionString);
+                var deadLetterClient = await deadLetterMessagingFactory.CreateMessageReceiverAsync(deadLetterPath, ReceiveMode.ReceiveAndDelete);
+
+                var messages = await deadLetterClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
+                if (!brokeredMessages.Any()) break;
+
             } while (true);
+        }
+
+        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
+        {
+            do
+            {
+                var flushClient = SubscriptionClient.CreateFromConnectionString(_topic.ConnectionString, _topic.Name, Name, ReceiveMode.ReceiveAndDelete);
+                var messages = await flushClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
+                if (!brokeredMessages.Any()) break;
+
+                Parallel.ForEach(brokeredMessages, async brokeredMessage =>
+                {
+                    await actionAsync(brokeredMessage);
+                });
+            } while (true);
+         }
+
+        public async Task SafeAbandonAsync(BrokeredMessage message)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.AbandonAsync());
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch (Exception)
+            {
+                // It does not matter if we fail to abandon.
+                // Most probably, that only means that it already has been abandoned.
+            }
+        }
+
+        public async Task SafeCompleteAsync<T>(BrokeredMessage message, T interpretedMessage)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.CompleteAsync());
+            }
+            catch (MessageLockLostException ex)
+            {
+                Log.Error(ex, "Queue {1}: {0} could not be completed (due to lock lost)", interpretedMessage, Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Critical(ex, "Queue {1}: {0} could not be completed.", interpretedMessage, Name);
+            }
+        }
+
+        public async Task SafeDeadLetterAsync(BrokeredMessage message)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.DeadLetterAsync());
+            }
+            catch (MessageLockLostException ex)
+            {
+                Log.Error(ex, "Queue {0}: Message could not be put on the dead letter queue (due to lock lost)", Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Critical(ex, "Queue {0}: Message could not be put on the dead letter queue", Name);
+            }
         }
     }
 }

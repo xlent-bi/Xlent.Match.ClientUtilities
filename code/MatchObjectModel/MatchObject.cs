@@ -3,17 +3,12 @@
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
 {
     /// <summary>
-    /// This class is an implementation of the MatchObject as specified at
-    /// http://www.xlentmatch.com/wiki/MatchObject
+    ///     This class is an implementation of the MatchObject as specified at
+    ///     http://www.xlentmatch.com/wiki/MatchObject
     /// </summary>
     [DataContract]
     public class MatchObject
     {
-        [DataMember]
-        public Key Key { get; set; }
-        [DataMember]
-        public Data Data { get; set; }
-
         public MatchObject(string clientName, string entityName, string keyValue, string matchId = null)
             : this(new Key(clientName, entityName, keyValue, matchId))
         {
@@ -23,6 +18,18 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         {
             Key = key;
             Data = data;
+        }
+
+        [DataMember]
+        public Key Key { get; set; }
+
+        [DataMember]
+        public Data Data { get; set; }
+
+        public string this[string name]
+        {
+            get { return GetPropertyValue(name); }
+            set { SetProperty(name, value); }
         }
 
         public override bool Equals(object otherObject)
@@ -42,7 +49,6 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         {
             return Key.ToString();
         }
-
 
         public void SetProperties(bool okIfNotExists, params string[] arguments)
         {
@@ -71,12 +77,6 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             if (null == Data) return null;
 
             return Data.GetPropertyValue(name, true);
-        }
-
-        public string this[string name]
-        {
-            get { return GetPropertyValue(name); }
-            set { SetProperty(name, value); }
         }
     }
 }

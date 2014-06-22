@@ -23,7 +23,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             Name = name;
 
-            CreatePairedNamespaceManager(pairedConnectionStringName); 
+            CreatePairedNamespaceManager(pairedConnectionStringName);
             CreateTopicTransient(name);
 
             Client = MessagingFactory.CreateTopicClient(name);
@@ -50,18 +50,18 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
-        public void Resend(BrokeredMessage message)
+        public async Task ResendAsync(BrokeredMessage message)
         {
             var newMessage = message.Clone();
-            Send(newMessage);
+            await SendAsync(newMessage);
         }
 
-        public void ResendAndComplete(BrokeredMessage message)
+        public async Task ResendAndCompleteAsync(BrokeredMessage message)
         {
-            Resend(message);
+            await ResendAsync(message);
             try
             {
-                RetryPolicy.ExecuteAction(message.Complete);
+                await RetryPolicy.ExecuteAsync(message.CompleteAsync);
             }
             // ReSharper disable once EmptyGeneralCatchClause
             catch
@@ -85,6 +85,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public void Send(BrokeredMessage message)
         {
             RetryPolicy.ExecuteAction(() => Client.Send(message));
+        }
+
+        public async Task SendAsync(BrokeredMessage message)
+        {
+            await RetryPolicy.ExecuteAsync(() => Client.SendAsync(message));
         }
 
         public SubscriptionClient GetOrCreateSubscription(string name, Filter filter)
@@ -151,12 +156,31 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             await Task.Run(() => Flush());
         }
 
+        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
+        {
+            await ForEachSubscriptionAsync(subscription => subscription.ForEachMessageAsync(actionAsync));
+        }
+
         public void Flush()
         {
-            Task.WaitAll(NamespaceManager.GetSubscriptions(Client.Path)
+            ForEachSubscriptionAsync(async subscription => await subscription.FlushAsync()).Wait();
+        }
+          
+        public async Task ForEachSubscriptionAsync(Func<Subscription, Task> subscriptionActionAsync)
+        {
+            await Task.WhenAll(Subscriptions
                 .Select(subscriptionDescription => new Subscription(this, subscriptionDescription))
-                .Select(subscription => subscription.FlushAsync())
-                .ToArray());
+                .Select(subscriptionActionAsync));
+        }
+
+        public void ForEachSubscription(Action<Subscription> subscriptionAction)
+        {
+            ForEachSubscriptionAsync(async subscription => await Task.Run(() => subscriptionAction(subscription))).Wait();
+        }
+
+        public IEnumerable<SubscriptionDescription> Subscriptions
+        {
+            get { return NamespaceManager.GetSubscriptions(Client.Path); }
         }
 
         private TopicDescription GetTopicDescription()

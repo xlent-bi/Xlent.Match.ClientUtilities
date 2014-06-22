@@ -1,9 +1,11 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Linq;
+using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 using System;
 using System.Collections.Generic;
+using Xlent.Match.ClientUtilities.Logging;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {
@@ -63,13 +65,19 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             RetryPolicy.ExecuteAction(() => Client.Send(message));
         }
 
-        public void ResendAndComplete(BrokeredMessage message)
+
+        public async Task SendAsync(BrokeredMessage message)
+        {
+            await RetryPolicy.ExecuteAsync(() => Client.SendAsync(message));
+        }
+
+        public async Task ResendAndCompleteAsync(BrokeredMessage message)
         {
             var newMessage = message.Clone();
-            Send(newMessage);
+            await SendAsync(newMessage);
             try
             {
-                 RetryPolicy.ExecuteAction(message.Complete);
+                 await RetryPolicy.ExecuteAsync(message.CompleteAsync);
             }
             // ReSharper disable once EmptyGeneralCatchClause
             catch
@@ -115,19 +123,50 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public async Task FlushAsync()
         {
+            await ForEachMessageAsync(async message => await message.CompleteAsync());
+
             do
             {
-                var task = NonBlockingReceiveAsync();
-                var message = await task;
-                if (message == null) break;
-                await message.CompleteAsync();
+                var deadLetterPath = QueueClient.FormatDeadLetterPath(Name);
+                var deadLetterClient = QueueClient.CreateFromConnectionString(ConnectionString, deadLetterPath,
+                    ReceiveMode.ReceiveAndDelete);
+
+                var messages = await deadLetterClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
+                if (!brokeredMessages.Any()) break;
+
             } while (true);
         }
 
+        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
+        {
+            do
+            {
+                var flushClient = QueueClient.CreateFromConnectionString(ConnectionString, Name, ReceiveMode.ReceiveAndDelete);
+                var messages = await flushClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
+                if (!brokeredMessages.Any()) break;
+
+                Parallel.ForEach(brokeredMessages, async brokeredMessage =>
+                {
+                    await actionAsync(brokeredMessage);
+                });
+            } while (true);
+        }
 
         public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
         {
             Client.OnMessage(action, onMessageOptions);
+        }
+
+        public void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessageAsync(asyncAction, onMessageOptions);
+        }
+
+        private Task Callback(BrokeredMessage brokeredMessage)
+        {
+            throw new NotImplementedException();
         }
 
         public void Activate()
@@ -152,6 +191,52 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         private void SetQueueDescription(QueueDescription queueDescription)
         {
             RetryPolicy.ExecuteAction(() => NamespaceManager.UpdateQueue(queueDescription));
+        }
+
+        public async Task SafeAbandonAsync(BrokeredMessage message)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.AbandonAsync());
+            }
+            // ReSharper disable once EmptyGeneralCatchClause
+            catch (Exception)
+            {
+                // It does not matter if we fail to abandon.
+                // Most probably, that only means that it already has been abandoned.
+            }
+        }
+
+        public async Task SafeCompleteAsync<T>(BrokeredMessage message, T interpretedMessage)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.CompleteAsync());
+            }
+            catch (MessageLockLostException ex)
+            {
+                Log.Error(ex, "Queue {1}: {0} could not be completed (due to lock lost)", interpretedMessage, Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Critical(ex, "Queue {1}: {0} could not be completed.", interpretedMessage, Name);
+            }
+        }
+
+        public async Task SafeDeadLetterAsync(BrokeredMessage message)
+        {
+            try
+            {
+                await RetryPolicy.ExecuteAction(() => message.DeadLetterAsync());
+            }
+            catch (MessageLockLostException ex)
+            {
+                Log.Error(ex, "Queue {0}: Message could not be put on the dead letter queue (due to lock lost)", Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Critical(ex, "Queue {0}: Message could not be put on the dead letter queue", Name);
+            }
         }
     }
 }

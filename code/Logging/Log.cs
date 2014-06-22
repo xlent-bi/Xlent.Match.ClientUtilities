@@ -99,6 +99,7 @@ namespace Xlent.Match.ClientUtilities.Logging
             {
                 try
                 {
+                    // TODO: Does this call not introduce a possible stack overflow? Since UncaughtException calls LogEventCatchAll again?
                     UncaughtException(ex);
                 }
                 // It is very important that the logging never fails.

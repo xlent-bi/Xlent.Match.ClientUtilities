@@ -14,6 +14,12 @@ namespace Xlent.Match.ClientUtilities
 {
     public class AdapterSubscription : Subscription
     {
+        public delegate Key CreateRequestDelegate(Key key, Data data);
+
+        public delegate Data GetRequestDelegate(Key key);
+
+        public delegate void UpdateRequestDelegate(Key key, Data data);
+
         private static readonly Topic RequestTopic;
         private static readonly Topic ResponseTopic;
 
@@ -32,7 +38,7 @@ namespace Xlent.Match.ClientUtilities
         }
 
         public AdapterSubscription()
-            : this("AllClients", (Filter)null)
+            : this("AllClients", (Filter) null)
         {
         }
 
@@ -56,25 +62,18 @@ namespace Xlent.Match.ClientUtilities
             return new SqlFilter(string.Format("ClientName = '{0}' AND EntityName = '{1}'", clientName, entityName));
         }
 
-        public delegate Data GetRequestDelegate(Key key);
-
-        public delegate void UpdateRequestDelegate(Key key, Data data);
-
-        public delegate Key CreateRequestDelegate(Key key, Data data);
-
         public void ProcessRequests(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate,
             ManualResetEvent stopEvent, int maxConcurrentCalls = 1)
         {
-            var options = new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls };
+            var options = new OnMessageOptions {AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls};
 
             OnMessage(message =>
             {
-                var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
+                var request = message.GetBody<Request>(new DataContractSerializer(typeof (Request)));
 
                 SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
-
             }, options);
 
             stopEvent.WaitOne();
@@ -82,7 +81,7 @@ namespace Xlent.Match.ClientUtilities
         }
 
         /// <summary>
-        /// For test purposes!
+        ///     For test purposes!
         /// </summary>
         public void ProcessOneMessage(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
@@ -122,15 +121,26 @@ namespace Xlent.Match.ClientUtilities
 
                 return response;
             }
+            catch (MatchException)
+            {
+                throw;
+            }
+            catch (SilentFailOnlyForTestingException)
+            {
+#if DEBUG
+                Log.Warning("Silent fail. This exception should only occur when running test cases.");
+                throw;
+#else
+                throw new InternalServerErrorException("Silent fail. This exception should only occur when running test cases.");
+#endif
+            }
             catch (Exception e)
             {
-                if (e is MatchException) throw;
-
                 throw new InternalServerErrorException(e);
             }
         }
 
-        private static void SafeProcessRequest(GetRequestDelegate getRequestDelegate,
+        private void SafeProcessRequest(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate, Request request, BrokeredMessage message)
         {
@@ -152,7 +162,7 @@ namespace Xlent.Match.ClientUtilities
                 {
                     Value = oldId,
                     Message = exception.Message,
-                    Key = { Value = exception.NewKeyValue }
+                    Key = {Value = exception.NewKeyValue}
                 };
 
                 SendResponse(failureResponse);
@@ -179,11 +189,20 @@ namespace Xlent.Match.ClientUtilities
 
                 SendResponse(failureResponse);
             }
+            catch (SilentFailOnlyForTestingException)
+            {
+#if DEBUG
+                Log.Warning("Silent fail. This exception should only occur when running test cases.");
+#else
+                Log.Critical("Silent fail. This exception should only occur when running test cases.");
+#endif
+            }
             catch (Exception exception)
             {
                 Log.Critical(exception, "An error not handled by the adapter has occured");
 
-                var failureResponse = new FailureResponse(request, FailureResponse.ErrorTypeEnum.AdapterDidNotHandleException)
+                var failureResponse = new FailureResponse(request,
+                    FailureResponse.ErrorTypeEnum.AdapterDidNotHandleException)
                 {
                     Message = exception.ToString()
                 };
@@ -193,22 +212,14 @@ namespace Xlent.Match.ClientUtilities
 
             // Try to complete this message since we should have sent a response, either success or failure at
             // this point.
-            try
-            {
-                message.Complete();
-            }
-// ReSharper disable once EmptyGeneralCatchClause
-            catch (Exception)
-            {
-                // Intientional error suppression
-                // If we fail it could be because the message has timed out and then we will process it
-                // again so we just fail silently here
-            }
+
+            SafeCompleteAsync(message, request).Wait();
         }
 
         private static void SendResponse<T>(T response) where T : Response
         {
-            ResponseTopic.Send(response, new Dictionary<string, object> { { "ResponseType", response.ResponseTypeAsString } });
+            ResponseTopic.Send(response,
+                new Dictionary<string, object> {{"ResponseType", response.ResponseTypeAsString}});
         }
     }
 }
