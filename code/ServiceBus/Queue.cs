@@ -123,7 +123,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public async Task FlushAsync()
         {
-            await ForEachMessageAsync(async message => await message.CompleteAsync());
+            await ForEachMessageAsync(async message => await Task.Run(() => { }));
 
             do
             {

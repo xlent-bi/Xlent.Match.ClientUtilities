@@ -146,7 +146,7 @@ namespace Xlent.Match.ClientUtilities
         {
             try
             {
-                Log.Information("Processing {0} message", request.RequestTypeAsString);
+                Log.Verbose("Processing {0}", request);
 
                 var successResponse = ProcessRequest(
                     getRequestDelegate, updateRequestDelegate, createRequestDelegate,
