@@ -4,11 +4,25 @@ using System.Runtime.Serialization;
 namespace Xlent.Match.ClientUtilities.Messages
 {
     /// <summary>
-    /// Use this message when you failed to handle a Match <see cref="Request"/>.
+    ///     Use this message when you failed to handle a Match <see cref="Request" />.
     /// </summary>
     [DataContract(Name = "FailureRequest", Namespace = "http://xlentmatch.com/")]
     public class FailureResponse : Response
     {
+        public enum ErrorTypeEnum
+        {
+            NotFound,
+            BadRequest,
+            Forbidden,
+            NotImplemented,
+            Frozen,
+            NotAcceptable,
+            Gone,
+            Moved,
+            InternalServerError,
+            AdapterDidNotHandleException
+        };
+
         public const string NotFound = "NotFound";
         public const string BadRequest = "BadRequest";
         public const string Forbidden = "Forbidden";
@@ -19,34 +33,8 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string Moved = "Moved";
         public const string InternalServerError = "InternalServerError";
 
-        public enum ErrorTypeEnum
-        {
-            NotFound, BadRequest, Forbidden, NotImplemented, Frozen, NotAcceptable, Gone, Moved, InternalServerError, AdapterDidNotHandleException
-        };
-
         /// <summary>
-        /// The error type. See <see cref="ErrorTypeEnum"/> for the different values.
-        /// Mandatory.
-        /// </summary>
-        [DataMember]
-        public string ErrorTypeAsString { get; private set; }
-
-        public ErrorTypeEnum ErrorType { get { return TranslateErrorType(ErrorTypeAsString); } }
-
-        /// <summary>
-        /// Only used for error type <see cref="Moved"/>.
-        /// </summary>
-        [DataMember]
-        public string Value { get; set; }
-
-        /// <summary>
-        /// The error message.
-        /// </summary>
-        [DataMember]
-        public string Message { get; set; }
-
-        /// <summary>
-        /// The constructor.
+        ///     The constructor.
         /// </summary>
         /// <param name="request">The request that this is a response to.</param>
         /// <param name="errorType">The error type.</param>
@@ -57,10 +45,35 @@ namespace Xlent.Match.ClientUtilities.Messages
         }
 
         /// <summary>
-        /// Translate from <see cref="ErrorTypeEnum"/> to a string.
+        ///     The error type. See <see cref="ErrorTypeEnum" /> for the different values.
+        ///     Mandatory.
+        /// </summary>
+        [DataMember]
+        public string ErrorTypeAsString { get; private set; }
+
+        public ErrorTypeEnum ErrorType
+        {
+            get { return TranslateErrorType(ErrorTypeAsString); }
+        }
+
+        /// <summary>
+        ///     Only used for error type <see cref="Moved" />.
+        ///     Contains the new KeyValue (where the information has moved to).
+        /// </summary>
+        [DataMember]
+        public string Value { get; set; }
+
+        /// <summary>
+        ///     The error message.
+        /// </summary>
+        [DataMember]
+        public string Message { get; set; }
+
+        /// <summary>
+        ///     Translate from <see cref="ErrorTypeEnum" /> to a string.
         /// </summary>
         /// <param name="errorType">The error type.</param>
-        /// <returns>A string representation of the <paramref name="errorType"/>.</returns>
+        /// <returns>A string representation of the <paramref name="errorType" />.</returns>
         public static string TranslateErrorType(ErrorTypeEnum errorType)
         {
             switch (errorType)
@@ -89,10 +102,10 @@ namespace Xlent.Match.ClientUtilities.Messages
         }
 
         /// <summary>
-        /// Translate from a string to <see cref="ErrorTypeEnum"/>.
+        ///     Translate from a string to <see cref="ErrorTypeEnum" />.
         /// </summary>
         /// <param name="errorType">The error type.</param>
-        /// <returns>The enumeration value for <paramref name="errorType"/>.</returns>
+        /// <returns>The enumeration value for <paramref name="errorType" />.</returns>
         public static ErrorTypeEnum TranslateErrorType(string errorType)
         {
             switch (errorType)

@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
 {
@@ -17,7 +18,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         public MatchObject(Key key, Data data = null)
         {
             Key = key;
-            Data = data;
+            Data = data ?? new Data();
         }
 
         [DataMember]
@@ -53,29 +54,19 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         public void SetProperties(bool okIfNotExists, params string[] arguments)
         {
             if (arguments.Length < 1) return;
-
-            if (null == Data)
-            {
-                Data = new Data();
-            }
-
+            Debug.Assert(Data != null);
             Data.SetProperties(okIfNotExists, arguments);
         }
 
         public void SetProperty(string path, string value)
         {
-            if (null == Data)
-            {
-                Data = new Data();
-            }
-
+            Debug.Assert(Data != null);
             Data.SetPropertyValue(path, value);
         }
 
         public string GetPropertyValue(string name)
         {
-            if (null == Data) return null;
-
+            Debug.Assert(Data != null);
             return Data.GetPropertyValue(name, true);
         }
     }

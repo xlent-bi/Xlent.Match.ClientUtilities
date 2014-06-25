@@ -73,8 +73,8 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         {
             var theEvent = new Event(Event.EventTypeEnum.Moved)
             {
-                Key = new MatchObjectModel.Key(ClientName, entityName, newKeyValue),
-                OldId = oldKeyValue
+                Key = new MatchObjectModel.Key(ClientName, entityName, oldKeyValue),
+                NewId = newKeyValue
             };
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);

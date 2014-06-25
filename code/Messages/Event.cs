@@ -30,7 +30,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// Mandatory.
         /// </summary>
         /// <remarks>
-        /// For an event of type <see cref="Moved"/>, this contains the new identity for the object.
+        /// For an event of type <see cref="Moved"/>, this contains the old identity for the object.
         /// </remarks>
         [DataMember]
         public Key Key { get; set; }
@@ -43,11 +43,11 @@ namespace Xlent.Match.ClientUtilities.Messages
         public Data Data { get; set; }
 
         /// <summary>
-        /// Mandatory for events of type <see cref="Moved"/>. It should hold the old object identifier,
-        /// before the move.
+        /// Mandatory for events of type <see cref="Moved"/>. It should hold the new object identifier,
+        /// after the move.
         /// </summary>
         [DataMember]
-        public string OldId { get; set; }
+        public string NewId { get; set; }
 
         /// <summary>
         /// Best: The time when the event took place in the system.
@@ -127,8 +127,8 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         public override string ToString()
         {
-            return OldId != null ? 
-                String.Format("[Event {0} {1} ({2})]", EventTypeAsString, Key, OldId) 
+            return NewId != null ? 
+                String.Format("[Event {0} {1} (to {2})]", EventTypeAsString, Key, NewId) 
                 : String.Format("[Event {0} {1}]", EventTypeAsString, Key);
         }
     }

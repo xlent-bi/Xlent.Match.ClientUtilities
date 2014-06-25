@@ -146,7 +146,7 @@ namespace Xlent.Match.ClientUtilities
         {
             try
             {
-                Log.Information("Processing {0} message", request.RequestTypeAsString);
+                Log.Verbose("Processing {0}", request);
 
                 var successResponse = ProcessRequest(
                     getRequestDelegate, updateRequestDelegate, createRequestDelegate,
@@ -157,12 +157,10 @@ namespace Xlent.Match.ClientUtilities
             {
                 Log.Information(exception.Message);
 
-                var oldId = request.KeyValue;
                 var failureResponse = new FailureResponse(request, exception.ErrorType)
                 {
-                    Value = oldId,
+                    Value = exception.NewKeyValue,
                     Message = exception.Message,
-                    Key = {Value = exception.NewKeyValue}
                 };
 
                 SendResponse(failureResponse);
