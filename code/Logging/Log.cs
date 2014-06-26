@@ -2,18 +2,94 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using Microsoft.WindowsAzure;
 
 namespace Xlent.Match.ClientUtilities.Logging
 {
     public class Log
     {
+        private static readonly Dictionary<string, Log> Loggers = new Dictionary<string, Log>();
+        private static readonly object LoggerLock = new object();
+
+        private static readonly TraceEventType TraceLevel;
         private readonly TraceSource _traceSource;
-        private readonly static Dictionary<string, Log> Loggers = new Dictionary<string, Log>();
-        private readonly static object LoggerLock = new object();
+
+        static Log()
+        {
+            try
+            {
+                var level = CloudConfigurationManager.GetSetting("Xlent.Match.ClientUtilities.LogSeverityLevel");
+
+                switch (level)
+                {
+                    case "CRITICAL":
+                        TraceLevel = TraceEventType.Critical;
+                        break;
+                    case "ERROR":
+                        TraceLevel = TraceEventType.Error;
+                        break;
+                    case "WARNING":
+                        TraceLevel = TraceEventType.Warning;
+                        break;
+                    case "INFORMATION":
+                        TraceLevel = TraceEventType.Information;
+                        break;
+                    default:
+                        TraceLevel = TraceEventType.Verbose;
+                        break;
+                }
+            }
+            catch
+            {
+                TraceLevel = TraceEventType.Verbose;
+            }
+        }
 
         private Log(string logName)
         {
             _traceSource = new TraceSource(logName);
+        }
+
+        private static bool ShouldBeTraced(TraceEventType level)
+        {
+            if (level == TraceLevel) return true;
+
+            switch (level)
+            {
+                case TraceEventType.Critical:
+                    return true;
+                case TraceEventType.Error:
+                    switch (TraceLevel)
+                    {
+                        case TraceEventType.Critical:
+                            return false;
+                        default:
+                            return true;
+                    }
+                case TraceEventType.Warning:
+                    switch (TraceLevel)
+                    {
+                        case TraceEventType.Critical:
+                        case TraceEventType.Error:
+                            return false;
+                        default:
+                            return true;
+                    }
+                case TraceEventType.Information:
+                    switch (TraceLevel)
+                    {
+                        case TraceEventType.Critical:
+                        case TraceEventType.Error:
+                        case TraceEventType.Warning:
+                            return false;
+                        default:
+                            return true;
+                    }
+                case TraceEventType.Verbose:
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         private static Log GetLogger(string name = null)
@@ -85,13 +161,23 @@ namespace Xlent.Match.ClientUtilities.Logging
             LogEventCatchAll(TraceEventType.Verbose, null, message, parameters);
         }
 
-        private static void LogEventCatchAll(TraceEventType eventType, Exception exception, string format, params object[] parameters)
+        private static void LogEventCatchAll(TraceEventType eventType, Exception exception, string format,
+            params object[] parameters)
+        {
+            LogEventCatchAll(false, eventType, exception, format, parameters);
+        }
+
+        private static void LogEventCatchAll(bool recursive, TraceEventType eventType, Exception exception,
+            string format,
+            params object[] parameters)
         {
             try
             {
                 var message = parameters.Length > 0 ? String.Format(format, parameters) : format;
 
-                var logMessage = String.Format("{0}{1}{2}.", message, (exception == null) ? "" : ": ",
+                var logMessage = String.Format("{0}{1}{2}.",
+                    message,
+                    (exception == null) ? "" : ": ",
                     (exception == null) ? "" : ExtractExceptionMessages(exception));
                 LogEvent(eventType, logMessage);
             }
@@ -99,31 +185,35 @@ namespace Xlent.Match.ClientUtilities.Logging
             {
                 try
                 {
-                    // TODO: Does this call not introduce a possible stack overflow? Since UncaughtException calls LogEventCatchAll again?
-                    UncaughtException(ex);
+                    if (!recursive)
+                    {
+                        LogEventCatchAll(true, TraceEventType.Critical, ex, "Uncaught exception in logging routine");
+                    }
                 }
-                // It is very important that the logging never fails.
-                // ReSharper disable once EmptyGeneralCatchClause
                 catch
                 {
+                    try
+                    {
+                        Trace.WriteLine(String.Format("Uncaught exception in logging: {0}", ex));
+                    }
+                        // ReSharper disable once EmptyGeneralCatchClause
+                    catch
+                    {
+                        // It is very important that the logging never fails, so that motivates a catch all here.
+                    }
                 }
             }
         }
 
         private static void LogEvent(TraceEventType eventType, string message)
         {
-            try
+            if (ShouldBeTraced(eventType))
             {
                 var log = GetLogger();
                 log._traceSource.TraceEvent(eventType, 0, message);
                 log._traceSource.Flush();
-                WriteForDebug(eventType, message);
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Uncaught exception: " + ex);
-                throw;
-            }
+            WriteForDebug(eventType, message);
         }
 
         private static void WriteForDebug(TraceEventType eventType, string message)
@@ -146,7 +236,7 @@ namespace Xlent.Match.ClientUtilities.Logging
                 case TraceEventType.Verbose:
                     level = "{V}";
                     break;
-             }
+            }
             Debug.WriteLine(level + " " + message);
         }
 
