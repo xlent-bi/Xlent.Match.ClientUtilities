@@ -83,16 +83,70 @@ namespace Xlent.Match.ClientUtilities
         /// <summary>
         ///     For test purposes!
         /// </summary>
-        public void ProcessOneMessage(GetRequestDelegate getRequestDelegate,
+        public void ProcessOneMessage(
+            GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
-            CreateRequestDelegate createRequestDelegate)
+            CreateRequestDelegate createRequestDelegate,
+            Request.RequestTypeEnum? requestType = null,
+            string clientName = null, string entityName = null, string keyValue = null)
         {
             BrokeredMessage message;
-            var request = GetOneMessage<Request>(out message);
+            var request = GetOneMessageNoBlocking<Request>(out message);
             if (request == null) return;
+            var queue = new Queue<Request>();
+
+            while (!IsExpectedRequest(request, requestType, clientName, entityName, keyValue))
+            {
+                queue.Enqueue(request);
+                SafeCompleteAsync(message, request).Wait();
+                request = GetOneMessageNoBlocking<Request>(out message);
+                if (request == null) break;
+            }
+
+            foreach (var r in queue)
+            {
+                SendRequest(r);
+            }
+
+            if (request == null)
+            {
+                throw new ApplicationException(String.Format(
+                    "Expected request of type {0} ({1}/{2}/{3})",
+                    requestType, clientName, entityName, keyValue));
+            }
 
             SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
         }
+
+        private bool IsExpectedRequest(Request request, Request.RequestTypeEnum? requestType, string clientName,
+            string entityName, string keyValue)
+        {
+            if (requestType != null && (requestType != request.RequestType)) return false;
+
+            if (String.IsNullOrEmpty(clientName)) return true;
+            if (request.ClientName != clientName) return false;
+
+            if (String.IsNullOrEmpty(entityName)) return true;
+            if (request.EntityName != entityName) return false;
+
+            if (String.IsNullOrEmpty(keyValue)) return true;
+            var reqeustKeyValue = request.Key.Value ?? request.Key.MatchId;
+            return (reqeustKeyValue == keyValue);
+        }
+
+
+        private void SendRequest(Request request)
+        {
+            RequestTopic.Send(
+                request,
+                new Dictionary<string, object>
+                {
+                    {"RequestType", request.RequestTypeAsString},
+                    {"ClientName", request.ClientName},
+                    {"EntityName", request.EntityName}
+                });
+        }
+
 
         public static SuccessResponse ProcessRequest(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
@@ -216,6 +270,7 @@ namespace Xlent.Match.ClientUtilities
 
         private static void SendResponse<T>(T response) where T : Response
         {
+            Log.Verbose("{0} sending response {1}", response.ClientName, response);
             ResponseTopic.Send(response,
                 new Dictionary<string, object> {{"ResponseType", response.ResponseTypeAsString}});
         }

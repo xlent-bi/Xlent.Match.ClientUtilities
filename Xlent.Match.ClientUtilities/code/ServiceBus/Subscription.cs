@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -41,6 +42,12 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             } while (message == null);
 
             return message.GetBody<T>(new DataContractSerializer(typeof(T)));
+        }
+
+        public T GetOneMessageNoBlocking<T>(out BrokeredMessage message) where T : class
+        {
+            message = NonBlockingReceive();
+            return message == null ? null : message.GetBody<T>(new DataContractSerializer(typeof(T)));
         }
 
         public BrokeredMessage NonBlockingReceive()
@@ -109,7 +116,9 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task FlushAsync()
         {
             await ForEachMessageAsync(async message => await Task.Run(() => {}));
- 
+            var length = GetLength();
+            //Debug.Assert(length == 0, "Expected subscription to be empty after flush", "Subscription \"{0}\" = {1}", Name, length);
+
             do
             {
                 var deadLetterPath = SubscriptionClient.FormatDeadLetterPath(_topic.Name, Name);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.Serialization;
 using Xlent.Match.ClientUtilities.MatchObjectModel;
 
@@ -10,6 +11,7 @@ namespace Xlent.Match.ClientUtilities.Messages
     [DataContract(Name = "Event", Namespace = "http://xlentmatch.com/")]
     public class Event : IKeyMessage
     {
+        private Key _key;
         public const string Updated = "Updated";
         public const string Moved = "Moved";
         public const string Deleted = "Deleted";
@@ -33,7 +35,15 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// For an event of type <see cref="Moved"/>, this contains the old identity for the object.
         /// </remarks>
         [DataMember]
-        public Key Key { get; set; }
+        public Key Key
+        {
+            get { return _key; }
+            set
+            {
+                Debug.Assert(String.IsNullOrEmpty(value.MatchId) || String.IsNullOrEmpty(value.Value));
+                _key = value;
+            }
+        }
 
         /// <summary>
         /// Information about the object that has changed.

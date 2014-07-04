@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
@@ -174,6 +175,11 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
                 string value = arguments[i + 1];
                 SetPropertyValue(name, value);
             }
+        }
+
+        public override string ToString()
+        {
+            return String.Join(", ",Properties.Select(pair => String.Format("{0}=\"{1}\"", pair.Key, pair.Value)));
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
@@ -124,6 +125,8 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         public async Task FlushAsync()
         {
             await ForEachMessageAsync(async message => await Task.Run(() => { }));
+            var length = GetLength();
+            //Debug.Assert(length == 0, "Expected queue to be empty after flush", "Queue \"{0}\" = {1}", Name, length);
 
             do
             {
