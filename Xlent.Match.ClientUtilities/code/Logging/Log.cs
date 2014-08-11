@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Microsoft.WindowsAzure;
 
 namespace Xlent.Match.ClientUtilities.Logging
@@ -237,7 +238,14 @@ namespace Xlent.Match.ClientUtilities.Logging
                     level = "{V}";
                     break;
             }
-            Debug.WriteLine(level + " " + message);
+            var newLines = "";
+            var match = Regex.Match(message, "^(\r+)(.+)$");
+            if (match.Success)
+            {
+                newLines = match.Groups[1].Value;
+                message = match.Groups[2].Value;
+            }
+            Debug.WriteLine(newLines + level + " " + message);
         }
 
         private static string ExtractExceptionMessages(Exception ex)

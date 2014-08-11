@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -11,21 +10,28 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 {
     public class Subscription : IQueueReceiver
     {
+        private readonly ReceiveMode _receiveMode;
         private readonly Topic _topic;
-        public string Name { get { return Client.Name; } }
-        public Subscription(Topic topic, string name, Filter filter)
-        {
-            _topic = topic;
-            Client = topic.GetOrCreateSubscription(name, filter);
-       }
 
-        public Subscription(Topic topic, SubscriptionDescription subscriptionDescription)
+        public Subscription(Topic topic, string name, Filter filter,
+            ReceiveMode receiveMode = ReceiveMode.PeekLock)
         {
             _topic = topic;
-            Client = topic.CreateSubscriptionClient(subscriptionDescription.Name);
+            _receiveMode = receiveMode;
+            Client = topic.GetOrCreateSubscription(name, filter, receiveMode);
         }
 
-        public Topic Topic { get { return _topic; } }
+        public Subscription(Topic topic, SubscriptionDescription subscriptionDescription,
+            ReceiveMode receiveMode = ReceiveMode.PeekLock)
+        {
+            _topic = topic;
+            Client = topic.CreateSubscriptionClient(subscriptionDescription.Name, receiveMode);
+        }
+
+        public Topic Topic
+        {
+            get { return _topic; }
+        }
 
         public RetryPolicy<ServiceBusTransientErrorDetectionStrategy> RetryPolicy
         {
@@ -34,30 +40,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         private SubscriptionClient Client { get; set; }
 
-        public T GetOneMessage<T>(out BrokeredMessage message) where T : class
+        public string Name
         {
-            do
-            {
-                message = BlockingReceive();
-            } while (message == null);
-
-            return message.GetBody<T>(new DataContractSerializer(typeof(T)));
-        }
-
-        public T GetOneMessageNoBlocking<T>(out BrokeredMessage message) where T : class
-        {
-            message = NonBlockingReceive();
-            return message == null ? null : message.GetBody<T>(new DataContractSerializer(typeof(T)));
+            get { return Client.Name; }
         }
 
         public BrokeredMessage NonBlockingReceive()
         {
             return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
-        }
-
-        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
-        {
-            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
         }
 
         public BrokeredMessage BlockingReceive()
@@ -79,26 +69,18 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessageAsync(asyncAction, onMessageOptions);
         }
 
-        public void Close()
-        {
-            RetryPolicy.ExecuteAction(() => Client.Close());
-        }
-
         public void Activate()
         {
             var subscriptionDescription = GetSubscriptionDescription();
             subscriptionDescription.Status = EntityStatus.Active;
             SetSubscriptionDescription(subscriptionDescription);
         }
-         
-        private void SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
-        {
-            RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
-        }
 
-        private SubscriptionDescription GetSubscriptionDescription()
+        public void SetLockDuration(TimeSpan durationTimeSpan)
         {
-            return RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name));
+            var description = GetSubscriptionDescription();
+            description.LockDuration = durationTimeSpan;
+            SetSubscriptionDescription(description);
         }
 
         public void Disable()
@@ -115,7 +97,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public async Task FlushAsync()
         {
-            await ForEachMessageAsync(async message => await Task.Run(() => {}));
+            await ForEachMessageAsync(async message => await Task.Run(() => { }));
             var length = GetLength();
             //Debug.Assert(length == 0, "Expected subscription to be empty after flush", "Subscription \"{0}\" = {1}", Name, length);
 
@@ -123,12 +105,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             {
                 var deadLetterPath = SubscriptionClient.FormatDeadLetterPath(_topic.Name, Name);
                 var deadLetterMessagingFactory = MessagingFactory.CreateFromConnectionString(_topic.ConnectionString);
-                var deadLetterClient = await deadLetterMessagingFactory.CreateMessageReceiverAsync(deadLetterPath, ReceiveMode.ReceiveAndDelete);
+                var deadLetterClient =
+                    await
+                        deadLetterMessagingFactory.CreateMessageReceiverAsync(deadLetterPath,
+                            ReceiveMode.ReceiveAndDelete);
 
                 var messages = await deadLetterClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
                 var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
                 if (!brokeredMessages.Any()) break;
-
             } while (true);
         }
 
@@ -136,25 +120,30 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             do
             {
-                var flushClient = SubscriptionClient.CreateFromConnectionString(_topic.ConnectionString, _topic.Name, Name, ReceiveMode.ReceiveAndDelete);
+                var flushClient = SubscriptionClient.CreateFromConnectionString(_topic.ConnectionString, _topic.Name,
+                    Name, ReceiveMode.ReceiveAndDelete);
                 var messages = await flushClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
                 var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
                 if (!brokeredMessages.Any()) break;
 
-                Parallel.ForEach(brokeredMessages, async brokeredMessage =>
-                {
-                    await actionAsync(brokeredMessage);
-                });
+                Parallel.ForEach(brokeredMessages, async brokeredMessage => { await actionAsync(brokeredMessage); });
             } while (true);
-         }
+        }
 
         public async Task SafeAbandonAsync(BrokeredMessage message)
         {
             try
             {
+                if (_receiveMode == ReceiveMode.ReceiveAndDelete)
+                {
+                    Log.Warning(
+                        "Not expected to abandon messages on the subscription \"{0}\" that has ReceiveMode={1}.",
+                        this, _receiveMode);
+                    return;
+                }
                 await RetryPolicy.ExecuteAction(() => message.AbandonAsync());
             }
-            // ReSharper disable once EmptyGeneralCatchClause
+                // ReSharper disable once EmptyGeneralCatchClause
             catch (Exception)
             {
                 // It does not matter if we fail to abandon.
@@ -166,6 +155,10 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             try
             {
+                if (_receiveMode == ReceiveMode.ReceiveAndDelete)
+                {
+                    return;
+                }
                 await RetryPolicy.ExecuteAction(() => message.CompleteAsync());
             }
             catch (MessageLockLostException ex)
@@ -192,6 +185,47 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             {
                 Log.Critical(ex, "Queue {0}: Message could not be put on the dead letter queue", Name);
             }
+        }
+
+        public T GetOneMessage<T>(out BrokeredMessage message) where T : class
+        {
+            do
+            {
+                message = BlockingReceive();
+            } while (message == null);
+
+            return message.GetBody<T>(new DataContractSerializer(typeof (T)));
+        }
+
+        public T GetOneMessageNoBlocking<T>(out BrokeredMessage message) where T : class
+        {
+            message = NonBlockingReceive();
+            return message == null ? null : message.GetBody<T>(new DataContractSerializer(typeof (T)));
+        }
+
+        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        {
+            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+        }
+
+        public void Close()
+        {
+            RetryPolicy.ExecuteAction(() => Client.Close());
+        }
+
+        private void SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
+        {
+            RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
+        }
+
+        private SubscriptionDescription GetSubscriptionDescription()
+        {
+            return RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name));
+        }
+
+        public override string ToString()
+        {
+            return String.Format("{0}/{1}", _topic.Name, Name);
         }
     }
 }

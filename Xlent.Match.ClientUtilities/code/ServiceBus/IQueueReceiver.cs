@@ -14,6 +14,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         void OnMessageAsync(Func<BrokeredMessage,Task> asyncAction, OnMessageOptions onMessageOptions);
         void Disable();
         void Activate();
+        void SetLockDuration(TimeSpan durationTimeSpan);
         Task FlushAsync();
         Task SafeAbandonAsync(BrokeredMessage message);
         Task SafeCompleteAsync<T>(BrokeredMessage message, T interpretedMessage);

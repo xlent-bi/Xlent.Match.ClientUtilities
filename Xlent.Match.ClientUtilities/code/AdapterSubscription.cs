@@ -33,7 +33,7 @@ namespace Xlent.Match.ClientUtilities
         }
 
         private AdapterSubscription(string name, Filter filter)
-            : base(RequestTopic, name, filter)
+            : base(RequestTopic, name, filter, ReceiveMode.ReceiveAndDelete)
         {
         }
 
@@ -90,6 +90,10 @@ namespace Xlent.Match.ClientUtilities
             Request.RequestTypeEnum? requestType = null,
             string clientName = null, string entityName = null, string keyValue = null)
         {
+            var expectedRequestMessage = String.Format(
+               "Expected request of type {0} ({1}/{2}/{3})",
+               requestType, clientName, entityName, keyValue);
+            
             BrokeredMessage message;
             var request = GetOneMessageNoBlocking<Request>(out message);
             if (request == null) return;
@@ -97,6 +101,7 @@ namespace Xlent.Match.ClientUtilities
 
             while (!IsExpectedRequest(request, requestType, clientName, entityName, keyValue))
             {
+                Log.Verbose("Received {0} {1}", request, expectedRequestMessage);
                 queue.Enqueue(request);
                 SafeCompleteAsync(message, request).Wait();
                 request = GetOneMessageNoBlocking<Request>(out message);
@@ -110,9 +115,7 @@ namespace Xlent.Match.ClientUtilities
 
             if (request == null)
             {
-                throw new ApplicationException(String.Format(
-                    "Expected request of type {0} ({1}/{2}/{3})",
-                    requestType, clientName, entityName, keyValue));
+                 throw new ApplicationException(expectedRequestMessage);
             }
 
             SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
@@ -200,7 +203,7 @@ namespace Xlent.Match.ClientUtilities
         {
             try
             {
-                Log.Verbose("Processing {0}", request);
+                Log.Verbose("{0} processing {1}", request.ClientName, request);
 
                 var successResponse = ProcessRequest(
                     getRequestDelegate, updateRequestDelegate, createRequestDelegate,
