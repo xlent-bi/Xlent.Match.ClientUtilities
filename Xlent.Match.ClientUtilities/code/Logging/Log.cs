@@ -238,6 +238,7 @@ namespace Xlent.Match.ClientUtilities.Logging
                     level = "{V}";
                     break;
             }
+
             var newLines = "";
             var match = Regex.Match(message, "^(\r+)(.+)$");
             if (match.Success)
