@@ -18,7 +18,9 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             _topic = topic;
             _receiveMode = receiveMode;
-            Client = topic.GetOrCreateSubscription(name, filter, receiveMode);
+            var task = topic.GetOrCreateSubscriptionAsync(name, filter, receiveMode);
+            task.Wait();
+            Client = task.Result;
         }
 
         public Subscription(Topic topic, SubscriptionDescription subscriptionDescription,
@@ -45,23 +47,16 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             get { return Client.Name; }
         }
 
-        public BrokeredMessage NonBlockingReceive()
-        {
-            return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
-        }
+		public bool IsPeekReceiveMode { get { return _receiveMode == ReceiveMode.PeekLock; } }
 
-        public BrokeredMessage BlockingReceive()
+        public async Task<BrokeredMessage> BlockingReceiveAsync()
         {
             while (true)
             {
-                var message = RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromMinutes(60)));
+                var message =
+                    await RetryPolicy.ExecuteAsync(async () => await Client.ReceiveAsync(TimeSpan.FromMinutes(60)));
                 if (message != null) return message;
             }
-        }
-
-        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
-        {
-            Client.OnMessage(action, onMessageOptions);
         }
 
         public void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions)
@@ -69,37 +64,55 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessageAsync(asyncAction, onMessageOptions);
         }
 
-        public void Activate()
+        public async Task ActivateAsync()
         {
-            var subscriptionDescription = GetSubscriptionDescription();
+            var subscriptionDescription = await GetSubscriptionDescriptionAsync();
             subscriptionDescription.Status = EntityStatus.Active;
-            SetSubscriptionDescription(subscriptionDescription);
+            await SetSubscriptionDescriptionAsync(subscriptionDescription);
         }
 
-        public void SetLockDuration(TimeSpan durationTimeSpan)
+        public async Task SetLockDurationAsync(TimeSpan durationTimeSpan)
         {
-            var description = GetSubscriptionDescription();
+            var description = await GetSubscriptionDescriptionAsync();
             description.LockDuration = durationTimeSpan;
-            SetSubscriptionDescription(description);
+            await SetSubscriptionDescriptionAsync(description);
         }
 
-        public void Disable()
+        public async Task DisableAsync()
         {
-            var subscriptionDescription = GetSubscriptionDescription();
+            var subscriptionDescription = await GetSubscriptionDescriptionAsync();
             subscriptionDescription.Status = EntityStatus.ReceiveDisabled;
-            SetSubscriptionDescription(subscriptionDescription);
+            await SetSubscriptionDescriptionAsync(subscriptionDescription);
+        }
+
+        public async Task<long> GetLengthAsync()
+        {
+            var subscriptionDescription = await GetSubscriptionDescriptionAsync();
+            return subscriptionDescription.MessageCountDetails.ActiveMessageCount;
         }
 
         public long GetLength()
         {
-            return GetSubscriptionDescription().MessageCountDetails.ActiveMessageCount;
+            var task = GetLengthAsync();
+            task.Wait();
+            return task.Result;
+        }
+
+        public async Task<bool> IsEmptyAsync()
+        {
+            return await GetLengthAsync() == 0;
+        }
+
+        public bool IsEmpty()
+        {
+            var task = IsEmptyAsync();
+            task.Wait();
+            return task.Result;
         }
 
         public async Task FlushAsync()
         {
-            await ForEachMessageAsync(async message => await Task.Run(() => { }));
-            var length = GetLength();
-            //Debug.Assert(length == 0, "Expected subscription to be empty after flush", "Subscription \"{0}\" = {1}", Name, length);
+            await ForEachMessageAsyncUsingReceiveAndDeleteMode(async message => await Task.Run(() => { }));
 
             do
             {
@@ -116,13 +129,13 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             } while (true);
         }
 
-        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
+        public async Task ForEachMessageAsyncUsingReceiveAndDeleteMode(Func<BrokeredMessage, Task> actionAsync)
         {
             do
             {
-                var flushClient = SubscriptionClient.CreateFromConnectionString(_topic.ConnectionString, _topic.Name,
+                var client = SubscriptionClient.CreateFromConnectionString(_topic.ConnectionString, _topic.Name,
                     Name, ReceiveMode.ReceiveAndDelete);
-                var messages = await flushClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var messages = await client.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
                 var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
                 if (!brokeredMessages.Any()) break;
 
@@ -141,7 +154,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                         this, _receiveMode);
                     return;
                 }
-                await RetryPolicy.ExecuteAction(() => message.AbandonAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.AbandonAsync());
             }
                 // ReSharper disable once EmptyGeneralCatchClause
             catch (Exception)
@@ -159,7 +172,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 {
                     return;
                 }
-                await RetryPolicy.ExecuteAction(() => message.CompleteAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.CompleteAsync());
             }
             catch (MessageLockLostException ex)
             {
@@ -175,7 +188,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         {
             try
             {
-                await RetryPolicy.ExecuteAction(() => message.DeadLetterAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.DeadLetterAsync());
             }
             catch (MessageLockLostException ex)
             {
@@ -187,11 +200,23 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
-        public T GetOneMessage<T>(out BrokeredMessage message) where T : class
+        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        {
+            return await RetryPolicy.ExecuteAsync(async () => await Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+        }
+
+        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
+        {
+            Client.OnMessage(action, onMessageOptions);
+        }
+
+        public T GetOneMessageAsync<T>(out BrokeredMessage message) where T : class
         {
             do
             {
-                message = BlockingReceive();
+                var task = BlockingReceiveAsync();
+                task.Wait();
+                message = task.Result;
             } while (message == null);
 
             return message.GetBody<T>(new DataContractSerializer(typeof (T)));
@@ -199,28 +224,30 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public T GetOneMessageNoBlocking<T>(out BrokeredMessage message) where T : class
         {
-            message = NonBlockingReceive();
+            var task = NonBlockingReceiveAsync();
+            task.Wait();
+            message = task.Result;
             return message == null ? null : message.GetBody<T>(new DataContractSerializer(typeof (T)));
         }
 
-        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        public async Task CloseAsync()
         {
-            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+            await RetryPolicy.ExecuteAsync(async () => await Client.CloseAsync());
         }
 
-        public void Close()
+        private async Task SetSubscriptionDescriptionAsync(SubscriptionDescription subscriptionDescription)
         {
-            RetryPolicy.ExecuteAction(() => Client.Close());
+            await
+                RetryPolicy.ExecuteAsync(
+                    async () => await _topic.NamespaceManager.UpdateSubscriptionAsync(subscriptionDescription));
         }
 
-        private void SetSubscriptionDescription(SubscriptionDescription subscriptionDescription)
+        private async Task<SubscriptionDescription> GetSubscriptionDescriptionAsync()
         {
-            RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.UpdateSubscription(subscriptionDescription));
-        }
-
-        private SubscriptionDescription GetSubscriptionDescription()
-        {
-            return RetryPolicy.ExecuteAction(() => _topic.NamespaceManager.GetSubscription(Client.TopicPath, Name));
+            return
+                await
+                    RetryPolicy.ExecuteAsync(
+                        async () => await _topic.NamespaceManager.GetSubscriptionAsync(Client.TopicPath, Name));
         }
 
         public override string ToString()

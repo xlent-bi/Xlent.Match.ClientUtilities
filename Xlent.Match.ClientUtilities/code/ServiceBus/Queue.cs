@@ -18,47 +18,32 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             _receiveMode = receiveMode;
             Name = name;
             // Create a new Queue with custom settings
-            SafeCreateQueue(name);
+            SafeCreateQueueAsync(name).Wait();
             Client = QueueClient.CreateFromConnectionString(ConnectionString, name, receiveMode);
         }
 
         private QueueClient Client { get; set; }
-
-        public void Delete()
-        {
-            RetryPolicy.ExecuteAction(() => NamespaceManager.DeleteQueue(Client.Path));
-        }
 
         public async Task DeleteAsync()
         {
             await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteQueueAsync(Client.Path));
         }
 
-        public BrokeredMessage NonBlockingReceive()
-        {
-            return RetryPolicy.ExecuteAction(() => Client.Receive(TimeSpan.FromSeconds(1)));
-        }
-
-        public BrokeredMessage BlockingReceive()
+        public async Task<BrokeredMessage> BlockingReceiveAsync()
         {
             while (true)
             {
-                BrokeredMessage message = null;
-                RetryPolicy.ExecuteAction(() => message = Client.Receive(TimeSpan.FromMinutes(60)));
+                var message =
+                    await RetryPolicy.ExecuteAsync(async () => await Client.ReceiveAsync(TimeSpan.FromMinutes(60)));
                 if (message != null) return message;
             }
         }
 
-        public void SetLockDuration(TimeSpan durationTimeSpan)
+        public async Task SetLockDurationAsync(TimeSpan durationTimeSpan)
         {
-            var queueDescription = GetQueueDescription();
+            var queueDescription = await GetQueueDescriptionAsync();
             queueDescription.LockDuration = durationTimeSpan;
-            SetQueueDescription(queueDescription);
-        }
-
-        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
-        {
-            Client.OnMessage(action, onMessageOptions);
+            await SetQueueDescriptionAsync(queueDescription);
         }
 
         public void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions)
@@ -66,18 +51,18 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             Client.OnMessageAsync(asyncAction, onMessageOptions);
         }
 
-        public void Activate()
+        public async Task ActivateAsync()
         {
-            var queueDescription = GetQueueDescription();
+            var queueDescription = await GetQueueDescriptionAsync();
             queueDescription.Status = EntityStatus.Active;
-            SetQueueDescription(queueDescription);
+            await SetQueueDescriptionAsync(queueDescription);
         }
 
-        public void Disable()
+        public async Task DisableAsync()
         {
-            var queueDescription = GetQueueDescription();
+            var queueDescription = await GetQueueDescriptionAsync();
             queueDescription.Status = EntityStatus.ReceiveDisabled;
-            SetQueueDescription(queueDescription);
+            await SetQueueDescriptionAsync(queueDescription);
         }
 
         public async Task SafeAbandonAsync(BrokeredMessage message)
@@ -91,7 +76,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                         this, _receiveMode);
                     return;
                 }
-                await RetryPolicy.ExecuteAction(() => message.AbandonAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.AbandonAsync());
             }
                 // ReSharper disable once EmptyGeneralCatchClause
             catch (Exception)
@@ -109,7 +94,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 {
                     return;
                 }
-                await RetryPolicy.ExecuteAction(() => message.CompleteAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.CompleteAsync());
             }
             catch (MessageLockLostException ex)
             {
@@ -121,11 +106,13 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
+        public bool IsPeekReceiveMode { get { return _receiveMode == ReceiveMode.PeekLock; } }
+
         public async Task SafeDeadLetterAsync(BrokeredMessage message)
         {
             try
             {
-                await RetryPolicy.ExecuteAction(() => message.DeadLetterAsync());
+                await RetryPolicy.ExecuteAsync(async () => await message.DeadLetterAsync());
             }
             catch (MessageLockLostException ex)
             {
@@ -137,30 +124,29 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
+        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        {
+            return await RetryPolicy.ExecuteAsync(async () => await Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+        }
+
         public string Name { get; private set; }
 
-        public void Send<T>(T message, IDictionary<string, object> properties = null)
+        public async Task SendAsync<T>(T message, IDictionary<string, object> properties = null)
         {
-            var m = new BrokeredMessage(message, new DataContractSerializer(typeof (T)));
-            if (properties != null)
-            {
-                foreach (var property in properties)
-                {
-                    m.Properties.Add(property);
-                }
-            }
-            Send(m);
+            var m = SetProperties(message, properties);
+            await SendAsync(m);
         }
 
-        public void Send(BrokeredMessage message)
-        {
-            RetryPolicy.ExecuteAction(() => Client.Send(message));
-        }
-
-        public async Task ResendAndCompleteAsync(BrokeredMessage message)
+        public async Task ResendAndCompleteAsync(BrokeredMessage message, IQueueReceiver queueReceiver)
         {
             var newMessage = message.Clone();
             await SendAsync(newMessage);
+
+            if (!queueReceiver.IsPeekReceiveMode)
+            {
+                return;
+            }
+
             try
             {
                 await RetryPolicy.ExecuteAsync(message.CompleteAsync);
@@ -171,17 +157,36 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
+        public async Task<long> GetLengthAsync()
+        {
+            var queueDescription = await GetQueueDescriptionAsync();
+            return queueDescription.MessageCountDetails.ActiveMessageCount;
+        }
+
         public long GetLength()
         {
-            var queueDescription = GetQueueDescription();
-            return queueDescription.MessageCountDetails.ActiveMessageCount;
+            var task = GetLengthAsync();
+            task.Wait();
+            return task.Result;
+        }
+
+        public async Task<bool> IsEmptyAsync()
+        {
+            return await GetLengthAsync() == 0;
+        }
+
+        public bool IsEmpty()
+        {
+            var task = IsEmptyAsync();
+            task.Wait();
+            return task.Result;
         }
 
         public async Task FlushAsync()
         {
-            await ForEachMessageAsync(async message => await Task.Run(() => { }));
-            var length = GetLength();
-            //Debug.Assert(length == 0, "Expected queue to be empty after flush", "Queue \"{0}\" = {1}", Name, length);
+
+            await ForEachMessageAsyncUsingReceiveAndDeleteMode(async message => await Task.Run(() => { }));
+
 
             do
             {
@@ -195,13 +200,13 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             } while (true);
         }
 
-        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
+        public async Task ForEachMessageAsyncUsingReceiveAndDeleteMode(Func<BrokeredMessage, Task> actionAsync)
         {
             do
             {
-                var flushClient = QueueClient.CreateFromConnectionString(ConnectionString, Name,
+                var client = QueueClient.CreateFromConnectionString(ConnectionString, Name,
                     ReceiveMode.ReceiveAndDelete);
-                var messages = await flushClient.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
+                var messages = await client.ReceiveBatchAsync(100, TimeSpan.FromMilliseconds(1000));
                 var brokeredMessages = messages as BrokeredMessage[] ?? messages.ToArray();
                 if (!brokeredMessages.Any()) break;
 
@@ -209,15 +214,33 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             } while (true);
         }
 
-        private void SafeCreateQueue(string name)
+        public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
         {
-            if (NamespaceManager.QueueExists(name)) return;
+            Client.OnMessage(action, onMessageOptions);
+        }
+
+        private static BrokeredMessage SetProperties<T>(T message, IDictionary<string, object> properties)
+        {
+            var m = new BrokeredMessage(message, new DataContractSerializer(typeof (T)));
+            if (properties != null)
+            {
+                foreach (var property in properties)
+                {
+                    m.Properties.Add(property);
+                }
+            }
+            return m;
+        }
+
+        private async Task SafeCreateQueueAsync(string name)
+        {
+            if (await NamespaceManager.QueueExistsAsync(name)) return;
 
             try
             {
                 // Configure Queue Settings
                 var qd = new QueueDescription(name);
-                RetryPolicy.ExecuteAction(() => NamespaceManager.CreateQueue(qd));
+                await RetryPolicy.ExecuteAsync(async () => await NamespaceManager.CreateQueueAsync(qd));
             }
             catch (Exception)
             {
@@ -228,7 +251,9 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public T GetFromQueue<T>(out BrokeredMessage message) where T : class
         {
-            message = BlockingReceive();
+            var task = BlockingReceiveAsync();
+            task.Wait();
+            message = task.Result;
 
             return message.GetBody<T>(new DataContractSerializer(typeof (T)));
         }
@@ -238,24 +263,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             await RetryPolicy.ExecuteAsync(() => Client.SendAsync(message));
         }
 
-        public async Task<BrokeredMessage> NonBlockingReceiveAsync()
+        private async Task<QueueDescription> GetQueueDescriptionAsync()
         {
-            return await RetryPolicy.ExecuteAction(() => Client.ReceiveAsync(TimeSpan.FromSeconds(1)));
+            return await RetryPolicy.ExecuteAsync(async () => await NamespaceManager.GetQueueAsync(Client.Path));
         }
 
-        private Task Callback(BrokeredMessage brokeredMessage)
+        private async Task SetQueueDescriptionAsync(QueueDescription queueDescription)
         {
-            throw new NotImplementedException();
-        }
-
-        private QueueDescription GetQueueDescription()
-        {
-            return RetryPolicy.ExecuteAction(() => NamespaceManager.GetQueue(Client.Path));
-        }
-
-        private void SetQueueDescription(QueueDescription queueDescription)
-        {
-            RetryPolicy.ExecuteAction(() => NamespaceManager.UpdateQueue(queueDescription));
+            await RetryPolicy.ExecuteAsync(async () => await NamespaceManager.UpdateQueueAsync(queueDescription));
         }
     }
 }

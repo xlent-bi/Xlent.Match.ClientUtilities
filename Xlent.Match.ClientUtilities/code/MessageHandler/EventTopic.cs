@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
+using System.Threading.Tasks;
 using Xlent.Match.ClientUtilities.Logging;
 using Xlent.Match.ClientUtilities.MatchObjectModel;
 using Xlent.Match.ClientUtilities.Messages;
@@ -40,18 +41,18 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
         public string ClientName { get; private set; }
 
-        public static long TopicLength()
+        public static async Task<long> TopicLengthAsync()
         {
-            return Topic.GetLength();
+            return await Topic.GetLengthAsync();
         }
 
-        public static void Send(Event theEvent)
+        public static async Task SendAsync(Event theEvent)
         {
             Log.Verbose("==> Sending {0}", theEvent);
-            Topic.Send(theEvent, new Dictionary<string, object> {{"Type", theEvent.EventTypeAsString}});
+            await Topic.SendAsync(theEvent, new Dictionary<string, object> {{"Type", theEvent.EventTypeAsString}});
         }
 
-        public void SendUpdated(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null,
+        public async Task SendUpdatedAsync(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null,
             string externalReference = null)
         {
             var theEvent = new Event(Event.EventTypeEnum.Updated)
@@ -61,10 +62,10 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);
 
-            Send(theEvent);
+            await SendAsync(theEvent);
         }
 
-        public void SendDeleted(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null,
+        public async Task SendDeletedAsync(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null,
             string externalReference = null)
         {
             var theEvent = new Event(Event.EventTypeEnum.Deleted)
@@ -74,10 +75,10 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);
 
-            Send(theEvent);
+            await SendAsync(theEvent);
         }
 
-        public void SendMoved(string entityName, string oldKeyValue, string newKeyValue, string userName = null,
+        public async Task SendMoved(string entityName, string oldKeyValue, string newKeyValue, string userName = null,
             DateTime? timeStamp = null, string externalReference = null)
         {
             var theEvent = new Event(Event.EventTypeEnum.Moved)
@@ -88,7 +89,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
 
             AddOptionalFields(theEvent, userName, timeStamp, externalReference);
 
-            Send(theEvent);
+            await SendAsync(theEvent);
         }
 
         private static void AddOptionalFields(Event theEvent, string userName = null, DateTime? timeStamp = null,

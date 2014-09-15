@@ -36,11 +36,6 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             get { return NamespaceManager.GetSubscriptions(Client.Path); }
         }
 
-        public void Delete()
-        {
-            RetryPolicy.ExecuteAction(() => NamespaceManager.DeleteTopic(Client.Path));
-        }
-
         public async Task DeleteAsync()
         {
             await RetryPolicy.ExecuteAsync(() => NamespaceManager.DeleteTopicAsync(Client.Path));
@@ -48,9 +43,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
 
         public string Name { get; private set; }
 
-        public async Task ResendAndCompleteAsync(BrokeredMessage message)
+        public async Task ResendAndCompleteAsync(BrokeredMessage message, IQueueReceiver queueReceiver)
         {
             await ResendAsync(message);
+            if (!queueReceiver.IsPeekReceiveMode)
+            {
+                return;
+            }
+
             try
             {
                 await RetryPolicy.ExecuteAsync(message.CompleteAsync);
@@ -61,7 +61,48 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             }
         }
 
-        public void Send<T>(T message, IDictionary<string, object> properties)
+        public async Task SendAsync<T>(T message, IDictionary<string, object> properties)
+        {
+            var m = SetProperties(message, properties);
+            await SendAsync(m);
+        }
+
+        public async Task<long> GetLengthAsync()
+        {
+            var topicDescription = await GetTopicDescriptionAsync();
+            return topicDescription.MessageCountDetails.ActiveMessageCount;
+        }
+
+        public long GetLength()
+        {
+            var task = GetLengthAsync();
+            task.Wait();
+            return task.Result;
+        }
+
+        public async Task<bool> IsEmptyAsync()
+        {
+            return await GetLengthAsync() == 0;
+        }
+
+        public bool IsEmpty()
+        {
+            var task = IsEmptyAsync();
+            task.Wait();
+            return task.Result;
+        }
+
+        public async Task FlushAsync()
+        {
+            await ForEachSubscriptionAsync(async subscription => await subscription.FlushAsync());
+        }
+
+        public async Task ForEachMessageAsyncUsingReceiveAndDeleteMode(Func<BrokeredMessage, Task> actionAsync)
+        {
+            await ForEachSubscriptionAsync(subscription => subscription.ForEachMessageAsyncUsingReceiveAndDeleteMode(actionAsync));
+        }
+
+        private static BrokeredMessage SetProperties<T>(T message, IDictionary<string, object> properties)
         {
             var m = new BrokeredMessage(message, new DataContractSerializer(typeof (T)));
             if (properties != null)
@@ -71,27 +112,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     m.Properties.Add(property);
                 }
             }
-            Send(m);
-        }
-
-        public void Send(BrokeredMessage message)
-        {
-            RetryPolicy.ExecuteAction(() => Client.Send(message));
-        }
-
-        public long GetLength()
-        {
-            return GetTopicDescription().MessageCountDetails.ActiveMessageCount;
-        }
-
-        public async Task FlushAsync()
-        {
-            await Task.Run(() => Flush());
-        }
-
-        public async Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync)
-        {
-            await ForEachSubscriptionAsync(subscription => subscription.ForEachMessageAsync(actionAsync));
+            return m;
         }
 
         private void CreateTopicTransient(string name)
@@ -102,7 +123,7 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             {
                 // Configure Topic Settings
                 var qd = new TopicDescription(name);
-                RetryPolicy.ExecuteAction(() => NamespaceManager.CreateTopic(qd));
+                RetryPolicy.ExecuteAsync(async () => await NamespaceManager.CreateTopicAsync(qd));
             }
             catch (Exception)
             {
@@ -122,26 +143,29 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             await RetryPolicy.ExecuteAsync(() => Client.SendAsync(message));
         }
 
-        public SubscriptionClient GetOrCreateSubscription(string name, Filter filter,
+        public async Task<SubscriptionClient> GetOrCreateSubscriptionAsync(string name, Filter filter,
             ReceiveMode receiveMode = ReceiveMode.PeekLock)
         {
-            if (SubscriptionExists(name)) return CreateSubscriptionClient(name, receiveMode);
+            if (await SubscriptionExistsAsync(name)) return CreateSubscriptionClient(name, receiveMode);
 
             try
             {
                 if (filter == null)
                 {
-                    CreateSubscription(name);
+                    await CreateSubscriptionAsync(name);
                 }
                 else
                 {
-                    CreateSubscription(name, filter);
+                    await CreateSubscriptionAsync(name, filter);
                 }
                 return CreateSubscriptionClient(name, receiveMode);
             }
             catch (Exception)
             {
-                if (SubscriptionExists(name)) return CreateSubscriptionClient(name, receiveMode);
+                var task = SubscriptionExistsAsync(name);
+                task.Wait();
+                var subscriptionExists = task.Result;
+                if (subscriptionExists) return CreateSubscriptionClient(name, receiveMode);
                 throw;
             }
         }
@@ -153,24 +177,28 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                     () => MessagingFactory.CreateSubscriptionClient(Client.Path, name, receiveMode));
         }
 
-        private SubscriptionDescription CreateSubscription(string name)
+        private async Task<SubscriptionDescription> CreateSubscriptionAsync(string name)
         {
-            return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name));
+            return
+                await
+                    RetryPolicy.ExecuteAsync(
+                        async () => await NamespaceManager.CreateSubscriptionAsync(Client.Path, name));
         }
 
-        private SubscriptionDescription CreateSubscription(string name, Filter filter)
+        private async Task<SubscriptionDescription> CreateSubscriptionAsync(string name, Filter filter)
         {
-            return RetryPolicy.ExecuteAction(() => NamespaceManager.CreateSubscription(Client.Path, name, filter));
+            return
+                await
+                    RetryPolicy.ExecuteAsync(
+                        async () => await NamespaceManager.CreateSubscriptionAsync(Client.Path, name, filter));
         }
 
-        private bool SubscriptionExists(string name)
+        private async Task<bool> SubscriptionExistsAsync(string name)
         {
-            return RetryPolicy.ExecuteAction(() => NamespaceManager.SubscriptionExists(Client.Path, name));
-        }
-
-        public void Flush()
-        {
-            ForEachSubscriptionAsync(async subscription => await subscription.FlushAsync()).Wait();
+            return
+                await
+                    RetryPolicy.ExecuteAsync(
+                        async () => await NamespaceManager.SubscriptionExistsAsync(Client.Path, name));
         }
 
         public async Task ForEachSubscriptionAsync(Func<Subscription, Task> subscriptionActionAsync)
@@ -186,14 +214,14 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
                 .Wait();
         }
 
-        private TopicDescription GetTopicDescription()
+        private async Task<TopicDescription> GetTopicDescriptionAsync()
         {
-            return RetryPolicy.ExecuteAction(() => NamespaceManager.GetTopic(Client.Path));
+            return await RetryPolicy.ExecuteAsync(async () => await NamespaceManager.GetTopicAsync(Client.Path));
         }
 
-        private void SetTopicDescription(TopicDescription topicDescription)
+        private async Task SetTopicDescriptionAsync(TopicDescription topicDescription)
         {
-            RetryPolicy.ExecuteAction(() => NamespaceManager.UpdateTopic(topicDescription));
+            await RetryPolicy.ExecuteAsync(async () => await NamespaceManager.UpdateTopicAsync(topicDescription));
         }
     }
 }

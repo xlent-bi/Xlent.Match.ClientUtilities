@@ -7,18 +7,21 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
     public interface IQueueReceiver
     {
         string Name { get; }
+        Task<long> GetLengthAsync();
+        bool IsPeekReceiveMode { get; }
         long GetLength();
-        BrokeredMessage NonBlockingReceive();
-        BrokeredMessage BlockingReceive();
-        void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions);
-        void OnMessageAsync(Func<BrokeredMessage,Task> asyncAction, OnMessageOptions onMessageOptions);
-        void Disable();
-        void Activate();
-        void SetLockDuration(TimeSpan durationTimeSpan);
+        Task<bool> IsEmptyAsync();
+        bool IsEmpty();
+        Task<BrokeredMessage> NonBlockingReceiveAsync();
+        Task<BrokeredMessage> BlockingReceiveAsync();
+        void OnMessageAsync(Func<BrokeredMessage, Task> asyncAction, OnMessageOptions onMessageOptions);
+        Task DisableAsync();
+        Task ActivateAsync();
+        Task SetLockDurationAsync(TimeSpan durationTimeSpan);
         Task FlushAsync();
         Task SafeAbandonAsync(BrokeredMessage message);
         Task SafeCompleteAsync<T>(BrokeredMessage message, T interpretedMessage);
         Task SafeDeadLetterAsync(BrokeredMessage message);
-        Task ForEachMessageAsync(Func<BrokeredMessage, Task> actionAsync);
+        Task ForEachMessageAsyncUsingReceiveAndDeleteMode(Func<BrokeredMessage, Task> actionAsync);
     }
 }

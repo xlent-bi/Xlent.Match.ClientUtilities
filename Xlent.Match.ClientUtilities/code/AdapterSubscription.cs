@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 using Xlent.Match.ClientUtilities.Exceptions;
 using Xlent.Match.ClientUtilities.Logging;
@@ -69,15 +71,15 @@ namespace Xlent.Match.ClientUtilities
         {
             var options = new OnMessageOptions {AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls};
 
-            OnMessage(message =>
+            OnMessageAsync(async message =>
             {
                 var request = message.GetBody<Request>(new DataContractSerializer(typeof (Request)));
 
-                SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+                await SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
             }, options);
 
             stopEvent.WaitOne();
-            Close();
+            CloseAsync().Wait();
         }
 
         /// <summary>
@@ -108,17 +110,15 @@ namespace Xlent.Match.ClientUtilities
                 if (request == null) break;
             }
 
-            foreach (var r in queue)
-            {
-                SendRequest(r);
-            }
+            var tasks = queue.Select(SendRequestAsync).ToArray();
+            Task.WaitAll(tasks);
 
             if (request == null)
             {
                  throw new ApplicationException(expectedRequestMessage);
             }
 
-            SafeProcessRequest(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+            SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message).Wait();
         }
 
         private bool IsExpectedRequest(Request request, Request.RequestTypeEnum? requestType, string clientName,
@@ -138,9 +138,9 @@ namespace Xlent.Match.ClientUtilities
         }
 
 
-        private void SendRequest(Request request)
+        private async Task SendRequestAsync(Request request)
         {
-            RequestTopic.Send(
+            await RequestTopic.SendAsync(
                 request,
                 new Dictionary<string, object>
                 {
@@ -197,7 +197,7 @@ namespace Xlent.Match.ClientUtilities
             }
         }
 
-        private void SafeProcessRequest(GetRequestDelegate getRequestDelegate,
+        private async Task SafeProcessRequestAsync(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate, Request request, BrokeredMessage message)
         {
@@ -208,7 +208,7 @@ namespace Xlent.Match.ClientUtilities
                 var successResponse = ProcessRequest(
                     getRequestDelegate, updateRequestDelegate, createRequestDelegate,
                     request);
-                SendResponse(successResponse);
+                await SendResponseAsync(successResponse);
             }
             catch (MovedException exception)
             {
@@ -220,7 +220,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.Message,
                 };
 
-                SendResponse(failureResponse);
+                SendResponseAsync(failureResponse).Wait();
             }
             catch (InternalServerErrorException exception)
             {
@@ -231,7 +231,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.ToString()
                 };
 
-                SendResponse(failureResponse);
+                SendResponseAsync(failureResponse).Wait();
             }
             catch (MatchException exception)
             {
@@ -242,7 +242,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.Message
                 };
 
-                SendResponse(failureResponse);
+                SendResponseAsync(failureResponse).Wait();
             }
             catch (SilentFailOnlyForTestingException)
             {
@@ -262,7 +262,7 @@ namespace Xlent.Match.ClientUtilities
                     Message = exception.ToString()
                 };
 
-                SendResponse(failureResponse);
+                SendResponseAsync(failureResponse).Wait();
             }
 
             // Try to complete this message since we should have sent a response, either success or failure at
@@ -271,10 +271,10 @@ namespace Xlent.Match.ClientUtilities
             SafeCompleteAsync(message, request).Wait();
         }
 
-        private static void SendResponse<T>(T response) where T : Response
+        private static async Task SendResponseAsync<T>(T response) where T : Response
         {
             Log.Verbose("{0} sending response {1}", response.ClientName, response);
-            ResponseTopic.Send(response,
+            await ResponseTopic.SendAsync(response,
                 new Dictionary<string, object> {{"ResponseType", response.ResponseTypeAsString}});
         }
     }
