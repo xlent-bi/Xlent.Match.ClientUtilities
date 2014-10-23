@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
+using Xlent.Match.ClientUtilities.MatchObjectModel;
 
 namespace Xlent.Match.ClientUtilities.ServiceBus
 {

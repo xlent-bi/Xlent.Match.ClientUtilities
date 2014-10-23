@@ -19,6 +19,7 @@ namespace Xlent.Match.ClientUtilities.Messages
             NotAcceptable,
             Gone,
             Moved,
+            HasBeenUpdated,
             InternalServerError,
             AdapterDidNotHandleException
         };
@@ -31,6 +32,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         public const string NotAcceptable = "NotAcceptable";
         public const string Gone = "Gone";
         public const string Moved = "Moved";
+        public const string HasBeenUpdated = "HasBeenUpdated";
         public const string InternalServerError = "InternalServerError";
 
         /// <summary>
@@ -94,6 +96,8 @@ namespace Xlent.Match.ClientUtilities.Messages
                     return Gone;
                 case ErrorTypeEnum.Moved:
                     return Moved;
+                case ErrorTypeEnum.HasBeenUpdated:
+                    return HasBeenUpdated;
                 case ErrorTypeEnum.InternalServerError:
                     return InternalServerError;
                 default:
@@ -126,6 +130,8 @@ namespace Xlent.Match.ClientUtilities.Messages
                     return ErrorTypeEnum.Gone;
                 case Moved:
                     return ErrorTypeEnum.Moved;
+                case HasBeenUpdated:
+                    return ErrorTypeEnum.HasBeenUpdated;
                 case InternalServerError:
                     return ErrorTypeEnum.InternalServerError;
                 default:

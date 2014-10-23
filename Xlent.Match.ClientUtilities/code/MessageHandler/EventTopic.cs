@@ -49,7 +49,7 @@ namespace Xlent.Match.ClientUtilities.MessageHandler
         public static async Task SendAsync(Event theEvent)
         {
             Log.Verbose("==> Sending {0}", theEvent);
-            await Topic.SendAsync(theEvent, new Dictionary<string, object> {{"Type", theEvent.EventTypeAsString}});
+            await Topic.SendAsync(theEvent, new CaseInsensitiveDictionary<object> {{"Type", theEvent.EventTypeAsString}});
         }
 
         public async Task SendUpdatedAsync(string entityName, string keyValue, string userName = null, DateTime? timeStamp = null,

@@ -214,6 +214,11 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
             } while (true);
         }
 
+        public Task CloseAsync()
+        {
+            return Client.CloseAsync();
+        }
+
         public void OnMessage(Action<BrokeredMessage> action, OnMessageOptions onMessageOptions)
         {
             Client.OnMessage(action, onMessageOptions);

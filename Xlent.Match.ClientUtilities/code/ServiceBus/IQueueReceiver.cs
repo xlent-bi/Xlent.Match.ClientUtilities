@@ -23,5 +23,6 @@ namespace Xlent.Match.ClientUtilities.ServiceBus
         Task SafeCompleteAsync<T>(BrokeredMessage message, T interpretedMessage);
         Task SafeDeadLetterAsync(BrokeredMessage message);
         Task ForEachMessageAsyncUsingReceiveAndDeleteMode(Func<BrokeredMessage, Task> actionAsync);
+        Task CloseAsync();
     }
 }

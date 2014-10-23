@@ -52,7 +52,8 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             var key = otherKey as Key;
             if (key == null) return false;
 
-            if ((key.ClientName != ClientName) || (key.EntityName != EntityName)) return false;
+            if ((String.Compare(key.ClientName, ClientName, StringComparison.InvariantCultureIgnoreCase) != 0)
+                || (String.Compare(key.EntityName, EntityName, StringComparison.InvariantCultureIgnoreCase) != 0)) return false;
             if ((key.MatchId != null) && (key.MatchId == MatchId)) return true;
             return key.Value == Value;
         }

@@ -40,7 +40,7 @@ namespace Xlent.Match.ClientUtilities
         }
 
         public AdapterSubscription()
-            : this("AllClients", (Filter) null)
+            : this("AllClients", (Filter)null)
         {
         }
 
@@ -69,13 +69,15 @@ namespace Xlent.Match.ClientUtilities
             CreateRequestDelegate createRequestDelegate,
             ManualResetEvent stopEvent, int maxConcurrentCalls = 1)
         {
-            var options = new OnMessageOptions {AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls};
+            var options = new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls };
 
             OnMessageAsync(async message =>
             {
-                var request = message.GetBody<Request>(new DataContractSerializer(typeof (Request)));
+                var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
 
-                await SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+                await
+                    SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request,
+                        message);
             }, options);
 
             stopEvent.WaitOne();
@@ -85,7 +87,7 @@ namespace Xlent.Match.ClientUtilities
         /// <summary>
         ///     For test purposes!
         /// </summary>
-        public void ProcessOneMessage(
+        public async Task<Response> ProcessOneMessageAsync(
             GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate,
@@ -93,12 +95,12 @@ namespace Xlent.Match.ClientUtilities
             string clientName = null, string entityName = null, string keyValue = null)
         {
             var expectedRequestMessage = String.Format(
-               "Expected request of type {0} ({1}/{2}/{3})",
-               requestType, clientName, entityName, keyValue);
-            
+                "Expected request of type {0} ({1}/{2}/{3})",
+                requestType, clientName, entityName, keyValue);
+
             BrokeredMessage message;
             var request = GetOneMessageNoBlocking<Request>(out message);
-            if (request == null) return;
+            if (request == null) return null;
             var queue = new Queue<Request>();
 
             while (!IsExpectedRequest(request, requestType, clientName, entityName, keyValue))
@@ -111,14 +113,14 @@ namespace Xlent.Match.ClientUtilities
             }
 
             var tasks = queue.Select(SendRequestAsync).ToArray();
-            Task.WaitAll(tasks);
+            await Task.WhenAll(tasks);
 
             if (request == null)
             {
-                 throw new ApplicationException(expectedRequestMessage);
+                throw new ApplicationException(expectedRequestMessage);
             }
 
-            SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message).Wait();
+            return await SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
         }
 
         private bool IsExpectedRequest(Request request, Request.RequestTypeEnum? requestType, string clientName,
@@ -127,10 +129,10 @@ namespace Xlent.Match.ClientUtilities
             if (requestType != null && (requestType != request.RequestType)) return false;
 
             if (String.IsNullOrEmpty(clientName)) return true;
-            if (request.ClientName != clientName) return false;
+            if (String.Compare(request.ClientName, clientName, StringComparison.InvariantCultureIgnoreCase) != 0) return false;
 
             if (String.IsNullOrEmpty(entityName)) return true;
-            if (request.EntityName != entityName) return false;
+            if (String.Compare(request.EntityName, entityName, StringComparison.InvariantCultureIgnoreCase) != 0) return false;
 
             if (String.IsNullOrEmpty(keyValue)) return true;
             var reqeustKeyValue = request.Key.Value ?? request.Key.MatchId;
@@ -142,7 +144,7 @@ namespace Xlent.Match.ClientUtilities
         {
             await RequestTopic.SendAsync(
                 request,
-                new Dictionary<string, object>
+                new CaseInsensitiveDictionary<object>
                 {
                     {"RequestType", request.RequestTypeAsString},
                     {"ClientName", request.ClientName},
@@ -163,8 +165,21 @@ namespace Xlent.Match.ClientUtilities
                 {
                     case Request.RequestTypeEnum.Get:
                         response.Data = getRequestDelegate(request.Key);
+                        if (response.Data != null)
+                        {
+                            response.Data.CalculateCheckSum(request.KeyValue);
+                        }
                         break;
                     case Request.RequestTypeEnum.Update:
+                        var currentClientData = getRequestDelegate(request.Key);
+                        if (currentClientData != null)
+                        {
+                            currentClientData.CalculateCheckSum(request.KeyValue);
+                            if (currentClientData.CheckSum != request.Data.CheckSum)
+                            {
+                                throw new ClientDataHasBeenUpdated(currentClientData);
+                            }
+                        }
                         updateRequestDelegate(request.Key, request.Data);
                         break;
                     case Request.RequestTypeEnum.Create:
@@ -197,10 +212,11 @@ namespace Xlent.Match.ClientUtilities
             }
         }
 
-        private async Task SafeProcessRequestAsync(GetRequestDelegate getRequestDelegate,
+        private async Task<Response> SafeProcessRequestAsync(GetRequestDelegate getRequestDelegate,
             UpdateRequestDelegate updateRequestDelegate,
             CreateRequestDelegate createRequestDelegate, Request request, BrokeredMessage message)
         {
+            Response responseSent = null;
             try
             {
                 Log.Verbose("{0} processing {1}", request.ClientName, request);
@@ -209,6 +225,7 @@ namespace Xlent.Match.ClientUtilities
                     getRequestDelegate, updateRequestDelegate, createRequestDelegate,
                     request);
                 await SendResponseAsync(successResponse);
+                responseSent = successResponse;
             }
             catch (MovedException exception)
             {
@@ -221,6 +238,26 @@ namespace Xlent.Match.ClientUtilities
                 };
 
                 SendResponseAsync(failureResponse).Wait();
+                responseSent = failureResponse;
+            }
+            catch (ClientDataHasBeenUpdated exception)
+            {
+                Log.Information(exception.Message);
+
+                if (exception.NewClientData != null)
+                {
+                    exception.NewClientData.CalculateCheckSum(request.KeyValue);
+                }
+
+                var failureResponse = new FailureResponse(request, exception.ErrorType)
+                {
+                    Value = exception.NewCheckSum,
+                    Data = exception.NewClientData,
+                    Message = exception.Message,
+                };
+
+                SendResponseAsync(failureResponse).Wait();
+                responseSent = failureResponse;
             }
             catch (InternalServerErrorException exception)
             {
@@ -232,6 +269,7 @@ namespace Xlent.Match.ClientUtilities
                 };
 
                 SendResponseAsync(failureResponse).Wait();
+                responseSent = failureResponse;
             }
             catch (MatchException exception)
             {
@@ -243,6 +281,7 @@ namespace Xlent.Match.ClientUtilities
                 };
 
                 SendResponseAsync(failureResponse).Wait();
+                responseSent = failureResponse;
             }
             catch (SilentFailOnlyForTestingException)
             {
@@ -263,19 +302,22 @@ namespace Xlent.Match.ClientUtilities
                 };
 
                 SendResponseAsync(failureResponse).Wait();
+                responseSent = failureResponse;
             }
 
             // Try to complete this message since we should have sent a response, either success or failure at
             // this point.
 
             SafeCompleteAsync(message, request).Wait();
+
+            return responseSent;
         }
 
         private static async Task SendResponseAsync<T>(T response) where T : Response
         {
             Log.Verbose("{0} sending response {1}", response.ClientName, response);
             await ResponseTopic.SendAsync(response,
-                new Dictionary<string, object> {{"ResponseType", response.ResponseTypeAsString}});
+                new CaseInsensitiveDictionary<object> { { "ResponseType", response.ResponseTypeAsString } });
         }
     }
 }

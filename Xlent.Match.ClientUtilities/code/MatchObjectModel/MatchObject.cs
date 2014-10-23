@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Xlent.Match.ClientUtilities.MatchObjectModel
 {
@@ -58,7 +61,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             Data.SetProperties(okIfNotExists, arguments);
         }
 
-        public void SetProperties(bool okIfNotExists, IReadOnlyDictionary<string, string> propertyNamesAndValues)
+        public void SetProperties(bool okIfNotExists, IDictionary<string, string> propertyNamesAndValues)
         {
             Debug.Assert(Data != null);
             Data.SetProperties(okIfNotExists, propertyNamesAndValues);

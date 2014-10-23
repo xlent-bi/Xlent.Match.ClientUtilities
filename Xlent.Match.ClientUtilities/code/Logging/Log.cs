@@ -4,12 +4,13 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.WindowsAzure;
+using Xlent.Match.ClientUtilities.MatchObjectModel;
 
 namespace Xlent.Match.ClientUtilities.Logging
 {
     public class Log
     {
-        private static readonly Dictionary<string, Log> Loggers = new Dictionary<string, Log>();
+        private static readonly CaseInsensitiveDictionary<Log> Loggers = new CaseInsensitiveDictionary<Log>();
         private static readonly object LoggerLock = new object();
 
         private static readonly TraceEventType TraceLevel;
