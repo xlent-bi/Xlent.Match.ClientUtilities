@@ -40,7 +40,7 @@ namespace Xlent.Match.ClientUtilities
         }
 
         public AdapterSubscription()
-            : this("AllClients", (Filter)null)
+            : this("AllClients", (Filter) null)
         {
         }
 
@@ -69,11 +69,11 @@ namespace Xlent.Match.ClientUtilities
             CreateRequestDelegate createRequestDelegate,
             ManualResetEvent stopEvent, int maxConcurrentCalls = 1)
         {
-            var options = new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls };
+            var options = new OnMessageOptions {AutoComplete = false, MaxConcurrentCalls = maxConcurrentCalls};
 
             OnMessageAsync(async message =>
             {
-                var request = message.GetBody<Request>(new DataContractSerializer(typeof(Request)));
+                var request = message.GetBody<Request>(new DataContractSerializer(typeof (Request)));
 
                 await
                     SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request,
@@ -120,7 +120,10 @@ namespace Xlent.Match.ClientUtilities
                 throw new ApplicationException(expectedRequestMessage);
             }
 
-            return await SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request, message);
+            return
+                await
+                    SafeProcessRequestAsync(getRequestDelegate, updateRequestDelegate, createRequestDelegate, request,
+                        message);
         }
 
         private bool IsExpectedRequest(Request request, Request.RequestTypeEnum? requestType, string clientName,
@@ -129,10 +132,12 @@ namespace Xlent.Match.ClientUtilities
             if (requestType != null && (requestType != request.RequestType)) return false;
 
             if (String.IsNullOrEmpty(clientName)) return true;
-            if (String.Compare(request.ClientName, clientName, StringComparison.InvariantCultureIgnoreCase) != 0) return false;
+            if (String.Compare(request.ClientName, clientName, StringComparison.InvariantCultureIgnoreCase) != 0)
+                return false;
 
             if (String.IsNullOrEmpty(entityName)) return true;
-            if (String.Compare(request.EntityName, entityName, StringComparison.InvariantCultureIgnoreCase) != 0) return false;
+            if (String.Compare(request.EntityName, entityName, StringComparison.InvariantCultureIgnoreCase) != 0)
+                return false;
 
             if (String.IsNullOrEmpty(keyValue)) return true;
             var reqeustKeyValue = request.Key.Value ?? request.Key.MatchId;
@@ -172,7 +177,7 @@ namespace Xlent.Match.ClientUtilities
                         break;
                     case Request.RequestTypeEnum.Update:
                         var currentClientData = getRequestDelegate(request.Key);
-                        if (currentClientData != null)
+                        if ((currentClientData != null) && !currentClientData.ShouldCheckSumBeIgnored())
                         {
                             currentClientData.CalculateCheckSum(request.KeyValue);
                             if (currentClientData.CheckSum != request.Data.CheckSum)
@@ -317,7 +322,7 @@ namespace Xlent.Match.ClientUtilities
         {
             Log.Verbose("{0} sending response {1}", response.ClientName, response);
             await ResponseTopic.SendAsync(response,
-                new CaseInsensitiveDictionary<object> { { "ResponseType", response.ResponseTypeAsString } });
+                new CaseInsensitiveDictionary<object> {{"ResponseType", response.ResponseTypeAsString}});
         }
     }
 }

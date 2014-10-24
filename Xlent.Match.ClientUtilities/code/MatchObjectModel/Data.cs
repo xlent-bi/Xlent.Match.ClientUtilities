@@ -13,6 +13,8 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     [DataContract(Name = "Data", Namespace = "http://xlentmatch.com/")]
     public class Data
     {
+        private static string CheckSumToBeIgnored = "_IGNORE_";
+
         public Data()
         {
             Properties = new CaseInsensitiveDictionary<string>();
@@ -41,7 +43,8 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         /// <param name="properties">The properties that we will calculate the checksum for.</param>
         /// <returns>The calculated checksum</returns>
         /// <remarks>The checksum is calculated based on the property values sorted in alphabetical order.</remarks>
-        public static string CalculateKeyAndPropertiesCheckSum(string keyValue, IReadOnlyDictionary<string, string> properties)
+        public static string CalculateKeyAndPropertiesCheckSum(string keyValue,
+            IReadOnlyDictionary<string, string> properties)
         {
             using (var md5 = MD5.Create())
             {
@@ -125,6 +128,22 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
                 CheckSum = BitConverter.ToString(md5.Hash)
                     .Replace("-", String.Empty);
             }
+        }
+
+        /// <summary>
+        ///     Marke the checksum as being ignored
+        /// </summary>
+        public void IgnoreCheckSum()
+        {
+            CheckSum = CheckSumToBeIgnored;
+        }
+
+        /// <summary>
+        ///     Check if the checksum should be ignored
+        /// </summary>
+        public bool ShouldCheckSumBeIgnored()
+        {
+            return CheckSum == CheckSumToBeIgnored;
         }
 
         /// <summary>
@@ -347,7 +366,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
                     .Where(p => !ReferenceEquals(p.Value, null) && !thisLevelBlackList.Contains(p.Key))
                     .OrderBy(p => p.Key);
                 AddPropertiesToMd5(md5, netProperties);
-             }
+            }
 
             if (NestedProperties == null) return;
             foreach (var nestedProperty in NestedProperties
@@ -367,7 +386,8 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
             }
         }
 
-        private static void AddPropertiesToMd5(ICryptoTransform md5, IEnumerable<KeyValuePair<string, string>> properties)
+        private static void AddPropertiesToMd5(ICryptoTransform md5,
+            IEnumerable<KeyValuePair<string, string>> properties)
         {
             if (properties == null) return;
 
