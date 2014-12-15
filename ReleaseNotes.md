@@ -1,6 +1,6 @@
 # ClientUtilities release history
 
-## 3.3 (2014-10-23)
+## 3.3 (2014-12-14)
 
 * NEW: Added a public static method in Data to calculate a checksum for properties.
 * NEW: Added a Checksum field for the MatchObject data. This value is stored in the Key table.
