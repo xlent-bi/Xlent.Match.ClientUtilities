@@ -77,9 +77,9 @@ namespace Xlent.Match.ClientUtilities.Messages
 
         /// <summary>
         /// For requests of type <see cref="Request.Create"/>
-        /// this property must have the same value as  <see cref="Request.MatchId"/>.
+        /// this property must have the same value as  <see cref="Request.ReservationId"/>.
         /// </summary>
-        public string MatchId { get { return Key.MatchId; } }
+        public string ReservationId { get { return Key.ReservationId; } }
 
         /// <summary>
         /// Constructor for this class.

@@ -140,7 +140,7 @@ namespace Xlent.Match.ClientUtilities
                 return false;
 
             if (String.IsNullOrEmpty(keyValue)) return true;
-            var reqeustKeyValue = request.Key.Value ?? request.Key.MatchId;
+            var reqeustKeyValue = request.Key.Value ?? request.Key.ReservationId;
             return (reqeustKeyValue == keyValue);
         }
 
@@ -188,9 +188,9 @@ namespace Xlent.Match.ClientUtilities
                         updateRequestDelegate(request.Key, request.Data);
                         break;
                     case Request.RequestTypeEnum.Create:
-                        var matchId = request.Key.MatchId;
+                        var reservationId = request.Key.ReservationId;
                         response.Key = createRequestDelegate(request.Key, request.Data);
-                        response.Key.MatchId = matchId;
+                        response.Key.ReservationId = reservationId;
                         break;
                     default:
                         throw new BadRequestException(String.Format("Unknown request type: \"{0}\"", request.RequestType));

@@ -1,5 +1,9 @@
 # ClientUtilities release history
 
+## RC 3.4
+
+* CHANGE: Now uses ReservationId instead of MatchId in Key (affects Request and Response)
+
 ## 3.3 (2014-12-14)
 
 * NEW: Added a public static method in Data to calculate a checksum for properties.

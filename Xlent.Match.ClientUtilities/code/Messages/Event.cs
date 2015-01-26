@@ -40,7 +40,7 @@ namespace Xlent.Match.ClientUtilities.Messages
             get { return _key2; }
             set
             {
-                Debug.Assert(String.IsNullOrEmpty(value.MatchId) || String.IsNullOrEmpty(value.Value));
+                Debug.Assert(String.IsNullOrEmpty(value.ReservationId) || String.IsNullOrEmpty(value.Value));
                 _key2 = value;
             }
         }
