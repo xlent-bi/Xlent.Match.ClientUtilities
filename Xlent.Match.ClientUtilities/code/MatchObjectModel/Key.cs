@@ -32,19 +32,24 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         /// The identity in XlentMatch for this object.
         /// </summary>
         [DataMember]
-        public string MatchId { get; set; }
+        public string ReservationId { get; set; }
 
         public string CompactKey
         {
-            get { return String.Join("/", ClientName, EntityName, Value ?? MatchId); }
+            get { return String.Join("/", ClientName, EntityName, Value ?? ReservationId); }
         }
 
-        public Key(string clientName, string entityName, string value, string matchId = null)
+        public Key(string clientName, string entityName, string value)
         {
             ClientName = clientName;
             EntityName = entityName;
             Value = value;
-            MatchId = matchId;
+        }
+
+        public Key(string clientName, string entityName, string value, string reservationId)
+            : this(clientName, entityName, value)
+        {
+            ReservationId = reservationId;
         }
 
         public override bool Equals(object otherKey)
@@ -54,7 +59,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
 
             if ((String.Compare(key.ClientName, ClientName, StringComparison.InvariantCultureIgnoreCase) != 0)
                 || (String.Compare(key.EntityName, EntityName, StringComparison.InvariantCultureIgnoreCase) != 0)) return false;
-            if ((key.MatchId != null) && (key.MatchId == MatchId)) return true;
+            if ((key.ReservationId != null) && (key.ReservationId == ReservationId)) return true;
             return key.Value == Value;
         }
 
@@ -66,7 +71,7 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
         public override string ToString()
         {
             return string.IsNullOrWhiteSpace(Value) ?
-                string.Format("{0}/{1} ({2})", ClientName, EntityName, MatchId)
+                string.Format("{0}/{1} ({2})", ClientName, EntityName, ReservationId)
                 : string.Format("{0}/{1}/{2}", ClientName, EntityName, Value);
         }
     }

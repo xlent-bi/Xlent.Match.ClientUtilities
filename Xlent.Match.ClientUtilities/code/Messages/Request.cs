@@ -70,7 +70,7 @@ namespace Xlent.Match.ClientUtilities.Messages
         /// The internal Match identity of the object that the request is referring to.
         /// Mandatory for requests of type <see cref="Request.Create"/>.
         /// </summary>
-        public string MatchId { get { return Key.MatchId; } }
+        public string ReservationId { get { return Key.ReservationId; } }
         
         public Request(RequestTypeEnum requestType)
         {

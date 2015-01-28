@@ -14,8 +14,13 @@ namespace Xlent.Match.ClientUtilities.MatchObjectModel
     [DataContract]
     public class MatchObject
     {
-        public MatchObject(string clientName, string entityName, string keyValue, string matchId = null)
-            : this(new Key(clientName, entityName, keyValue, matchId))
+        public MatchObject(string clientName, string entityName, string keyValue)
+            : this(new Key(clientName, entityName, keyValue))
+        {
+        }
+
+        public MatchObject(string clientName, string entityName, string keyValue, string reservationId)
+            : this(new Key(clientName, entityName, keyValue, reservationId))
         {
         }
 
